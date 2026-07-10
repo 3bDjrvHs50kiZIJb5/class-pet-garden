@@ -7,14 +7,13 @@ import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import { getCurrentClassStorageKey as buildCurrentClassStorageKey, saveCurrentClassId } from '@/composables/useClassVip'
 import type { Class, EvaluationRecord } from '@/types'
+import {
+  CATEGORY_DISPLAY_LIMIT,
+  getUngroupedRecords,
+  groupRecordsByCategory
+} from '@/utils/recordGroups'
 
 const categories = ['学习', '行为', '健康', '其他'] as const
-
-function normalizeCategory(category?: string | null) {
-  const trimmed = (category || '').trim()
-  if (!trimmed) return '其他'
-  return (categories as readonly string[]).includes(trimmed) ? trimmed : '其他'
-}
 
 function isTaskRecord(record: EvaluationRecord) {
   return Boolean(record.task_id) || record.reason.startsWith('【任务】')
@@ -86,21 +85,9 @@ const filteredRecords = computed(() => {
   })
 })
 
-const groupedRecords = computed(() =>
-  categories.map(category => {
-    const all = filteredRecords.value.filter(record => normalizeCategory(record.category) === category)
-    return {
-      category,
-      total: all.length,
-      records: all
-    }
-  })
-)
+const groupedRecords = computed(() => groupRecordsByCategory(filteredRecords.value, categories))
 
-const ungroupedRecords = computed(() => {
-  const groupedIds = new Set(groupedRecords.value.flatMap(group => group.records.map(record => record.id)))
-  return filteredRecords.value.filter(record => !groupedIds.has(record.id))
-})
+const ungroupedRecords = computed(() => getUngroupedRecords(filteredRecords.value, categories))
 
 const stats = computed(() => {
   const todayStart = new Date()
@@ -357,7 +344,9 @@ onMounted(async () => {
                     </span>
                   </span>
                   <h3 class="min-w-0 flex-1 truncate text-sm font-bold text-[#795f50]">{{ group.category }}</h3>
-                  <span class="shrink-0 text-sm text-[#b0927c]">{{ group.total }} 条</span>
+                  <span class="shrink-0 text-sm text-[#b0927c]">
+                    {{ group.truncated ? `最近 ${CATEGORY_DISPLAY_LIMIT} 条` : `${group.total} 条` }}
+                  </span>
                 </div>
                 <div v-if="group.records.length" class="divide-y divide-[#f3f0ec]">
                   <div
@@ -395,11 +384,14 @@ onMounted(async () => {
                     </div>
                   </div>
                 </div>
-                <p v-else class="px-3 py-6 text-center text-sm text-[#b9a697]">暂无记录</p>
+                <p v-if="group.truncated" class="border-t border-[#f3f0ec] px-3 py-2 text-center text-xs text-[#b0927c]">
+                  本页共 {{ group.total }} 条，仅显示最近 {{ CATEGORY_DISPLAY_LIMIT }} 条
+                </p>
+                <p v-else-if="!group.records.length" class="px-3 py-6 text-center text-sm text-[#b9a697]">暂无记录</p>
               </div>
 
               <div
-                v-if="ungroupedRecords.length"
+                v-if="ungroupedRecords.records.length"
                 class="flex flex-col rounded-xl border border-[#f3ece4] bg-[#fffdfb] md:col-span-2 xl:col-span-4"
               >
                 <div class="flex items-center gap-2 border-b border-[#f3f0ec] px-3 py-2.5">
@@ -407,11 +399,13 @@ onMounted(async () => {
                     <span class="material-symbols-rounded text-[16px] text-[#64748b]">inventory_2</span>
                   </span>
                   <h3 class="min-w-0 flex-1 truncate text-sm font-bold text-[#795f50]">其他分类</h3>
-                  <span class="shrink-0 text-sm text-[#b0927c]">{{ ungroupedRecords.length }} 条</span>
+                  <span class="shrink-0 text-sm text-[#b0927c]">
+                    {{ ungroupedRecords.truncated ? `最近 ${CATEGORY_DISPLAY_LIMIT} 条` : `${ungroupedRecords.total} 条` }}
+                  </span>
                 </div>
                 <div class="divide-y divide-[#f3f0ec]">
                   <div
-                    v-for="record in ungroupedRecords"
+                    v-for="record in ungroupedRecords.records"
                     :key="record.id"
                     class="px-3 py-2.5"
                   >
@@ -445,6 +439,9 @@ onMounted(async () => {
                     </div>
                   </div>
                 </div>
+                <p v-if="ungroupedRecords.truncated" class="border-t border-[#f3f0ec] px-3 py-2 text-center text-xs text-[#b0927c]">
+                  本页共 {{ ungroupedRecords.total }} 条，仅显示最近 {{ CATEGORY_DISPLAY_LIMIT }} 条
+                </p>
               </div>
             </div>
 
