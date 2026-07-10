@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { setupTestDb } from './testDb.js'
 import { ensureDemoData } from '../demo-seed.js'
+import { isClassVipActive } from '../utils/vip.js'
+import { normalizeVipRow } from '../routes/vip.js'
 
 const DEMO_CLASS_ID = 'demo-class-2026'
 
@@ -22,5 +24,13 @@ describe('演示班级接口数据', () => {
     expect(demoClass?.name).toBe('向日葵班 · 成长花园')
     expect(students.length).toBe(16)
     expect(records.total).toBeGreaterThan(0)
+    expect(await isClassVipActive(db, DEMO_CLASS_ID)).toBe(true)
+
+    const vip = normalizeVipRow(
+      await db.prepare('SELECT * FROM class_vip_subscriptions WHERE class_id = ?').get(DEMO_CLASS_ID)
+    )
+    expect(vip?.isActive).toBe(true)
+    expect(vip?.neverExpires).toBe(true)
+    expect(vip?.plan).toBe('demo')
   })
 })

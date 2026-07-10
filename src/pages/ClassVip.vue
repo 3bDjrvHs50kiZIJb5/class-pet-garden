@@ -185,7 +185,7 @@ onMounted(loadOverview)
             </div>
           </div>
         </div>
-        <div class="relative flex min-h-56 items-center justify-center overflow-hidden bg-gradient-to-br from-[#fff8ef] via-[#fff3e3] to-[#ffe8cc] px-8 py-10">
+        <div class="relative hidden min-h-56 items-center justify-center overflow-hidden bg-gradient-to-br from-[#fff8ef] via-[#fff3e3] to-[#ffe8cc] px-8 py-10 lg:flex">
           <div class="absolute right-8 top-7 rounded-full bg-white/80 px-3 py-1.5 text-sm font-bold text-[#ae6a3e]">按班订阅</div>
           <div class="absolute bottom-0 h-20 w-[120%] rounded-t-[100%] bg-[#f8e6d4]/80"></div>
           <div class="relative z-10 flex flex-col items-center text-center">
@@ -291,7 +291,8 @@ onMounted(loadOverview)
                     当前方案：<span class="font-semibold text-[#422d20]">{{ item.vip.planLabel }}</span>
                   </p>
                   <p class="mt-0.5">
-                    有效期至：<span class="font-semibold text-[#422d20]">{{ formatDate(item.vip.expiresAt) }}</span>
+                    <template v-if="item.vip.neverExpires">有效期：<span class="font-semibold text-[#422d20]">永久有效</span></template>
+                    <template v-else>有效期至：<span class="font-semibold text-[#422d20]">{{ formatDate(item.vip.expiresAt) }}</span></template>
                   </p>
                 </div>
                 <p v-else-if="!item.isDemo" class="mt-3 rounded-xl bg-[#fff8f2] px-3 py-2 text-sm leading-6 text-[#9a735d]">

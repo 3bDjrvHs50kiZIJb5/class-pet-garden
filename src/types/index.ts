@@ -162,6 +162,7 @@ export interface ClassVipStatus {
   startedAt: number
   expiresAt: number
   isActive: boolean
+  neverExpires?: boolean
 }
 
 export interface ClassVipItem {

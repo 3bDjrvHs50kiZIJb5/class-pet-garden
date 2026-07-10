@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { useAuth } from '@/composables/useAuth'
+import { CURRENT_CLASS_CHANGED_EVENT, useClassVip } from '@/composables/useClassVip'
 import { useStudentImport, STUDENTS_IMPORTED_EVENT } from '@/composables/useStudentImport'
 
+const route = useRoute()
 const { isAdmin } = useAuth()
+const { currentClassVipActive, refreshClassVipStatus } = useClassVip()
+const showVipEntry = computed(() => !currentClassVipActive.value)
 
 withDefaults(defineProps<{
   activePage: 'dashboard' | 'gallery' | 'rules' | 'records' | 'ranking' | 'vip' | 'tasks' | 'manage'
@@ -54,15 +59,27 @@ const navigation = computed(() => [...navigationBeforeImport.value, ...navigatio
 
 function handleStudentsImported() {
   void refreshCurrentClassStudentCount()
+  void refreshClassVipStatus()
+}
+
+function handleCurrentClassChanged() {
+  void refreshClassVipStatus()
 }
 
 onMounted(() => {
   void refreshCurrentClassStudentCount()
+  void refreshClassVipStatus()
   window.addEventListener(STUDENTS_IMPORTED_EVENT, handleStudentsImported)
+  window.addEventListener(CURRENT_CLASS_CHANGED_EVENT, handleCurrentClassChanged)
 })
 
 onUnmounted(() => {
   window.removeEventListener(STUDENTS_IMPORTED_EVENT, handleStudentsImported)
+  window.removeEventListener(CURRENT_CLASS_CHANGED_EVENT, handleCurrentClassChanged)
+})
+
+watch(() => route.path, () => {
+  void refreshClassVipStatus()
 })
 </script>
 
@@ -89,18 +106,19 @@ onUnmounted(() => {
           <router-link v-for="item in navigationBeforeImport" :key="item.id" :to="item.to" class="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-sm font-semibold transition" :class="activePage === item.id ? 'bg-[#fff0e2] text-[#b85e25] shadow-[inset_0_0_0_1px_rgba(234,151,86,0.18)]' : 'text-[#765f50] hover:bg-[#fff7f1] hover:text-[#b85e25]'">
             <span class="material-symbols-rounded text-[20px] leading-none">{{ item.icon }}</span>{{ item.label }}
           </router-link>
-          <button v-if="showImportStudents" type="button" class="flex min-h-11 w-full items-center gap-3 rounded-2xl px-3 text-left text-sm font-semibold text-[#765f50] transition hover:bg-[#fff7f1] hover:text-[#b85e25]" @click="openImportModal">
+          <button v-if="showImportStudents" type="button" class="flex min-h-11 w-full items-center gap-3 rounded-2xl px-3 text-left text-sm font-semibold text-[#765f50] transition hover:bg-[#fff7f1] hover:text-[#b85e25]" @click="() => openImportModal()">
             <span class="material-symbols-rounded text-[20px] leading-none">upload</span>导入学生
           </button>
           <router-link v-for="item in navigationAfterImport" :key="item.id" :to="item.to" class="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-sm font-semibold transition" :class="activePage === item.id ? 'bg-[#fff0e2] text-[#b85e25] shadow-[inset_0_0_0_1px_rgba(234,151,86,0.18)]' : 'text-[#765f50] hover:bg-[#fff7f1] hover:text-[#b85e25]'">
             <span class="material-symbols-rounded text-[20px] leading-none">{{ item.icon }}</span>{{ item.label }}
           </router-link>
           <router-link to="/ranking" class="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-sm font-semibold transition" :class="activePage === 'ranking' ? 'bg-[#fff0e2] text-[#b85e25] shadow-[inset_0_0_0_1px_rgba(234,151,86,0.18)]' : 'text-[#765f50] hover:bg-[#fff7f1] hover:text-[#b85e25]'"><span class="material-symbols-rounded text-[20px] leading-none">emoji_events</span>班级排行榜</router-link>
-          <router-link to="/vip" class="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-sm font-semibold transition" :class="activePage === 'vip' ? 'bg-[#fff0e2] text-[#b85e25] shadow-[inset_0_0_0_1px_rgba(234,151,86,0.18)]' : 'text-[#765f50] hover:bg-[#fff7f1] hover:text-[#b85e25]'"><span class="material-symbols-rounded text-[20px] leading-none">workspace_premium</span>灵犀计划</router-link>
+          <router-link v-if="showVipEntry" to="/vip" class="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-sm font-semibold transition" :class="activePage === 'vip' ? 'bg-[#fff0e2] text-[#b85e25] shadow-[inset_0_0_0_1px_rgba(234,151,86,0.18)]' : 'text-[#765f50] hover:bg-[#fff7f1] hover:text-[#b85e25]'"><span class="material-symbols-rounded text-[20px] leading-none">workspace_premium</span>灵犀计划</router-link>
           <router-link v-if="isAdmin" to="/manage" class="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-sm font-semibold transition" :class="activePage === 'manage' ? 'bg-[#fff0e2] text-[#b85e25] shadow-[inset_0_0_0_1px_rgba(234,151,86,0.18)]' : 'text-[#765f50] hover:bg-[#fff7f1] hover:text-[#b85e25]'"><span class="material-symbols-rounded text-[20px] leading-none">manage_accounts</span>系统管理</router-link>
         </nav>
 
         <router-link
+          v-if="showVipEntry"
           to="/vip"
           class="group mt-auto block overflow-hidden rounded-3xl bg-[#fff3e8] p-3 transition hover:bg-[#ffe8d4] hover:shadow-[0_8px_24px_rgba(154,90,43,0.12)]"
           aria-label="前往灵犀计划"

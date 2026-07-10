@@ -1,6 +1,11 @@
 import { calculateLevel } from './utils/level.js'
+import { deleteClassData, DEMO_CLASS_ID } from './utils/adminCleanup.js'
 
-const DEMO_CLASS_ID = 'demo-class-2026'
+export { DEMO_CLASS_ID }
+
+const DEMO_VIP_SUBSCRIPTION_ID = 'demo-vip-permanent'
+/** 演示班级 VIP 到期时间：2100-01-01，视为永不过期 */
+export const DEMO_VIP_NEVER_EXPIRES_AT = 4102444800000000
 const DEMO_RULES = [
   { id: 'demo-rule-milestone', name: '成长里程碑达成', points: 100, category: '其他' },
   { id: 'demo-rule-role-model', name: '月度榜样奖励', points: 50, category: '行为' },
@@ -61,17 +66,24 @@ function buildRecords(student, studentIndex, now) {
   return records
 }
 
-/**
- * 为游客账户创建固定的演示班级。
- * 演示数据独立归属游客账户，不会读取、修改或混入真实老师的数据。
- * 返回值用于启动日志和独立种子命令的反馈。
- */
-export async function ensureDemoData(db, guestUserId) {
-  const existingDemo = await db.prepare('SELECT id FROM classes WHERE id = ?').get(DEMO_CLASS_ID)
-  if (existingDemo) {
-    return { seeded: false, reason: '演示数据已存在' }
+async function upsertDemoVipSubscription(db, now) {
+  const existing = await db.prepare('SELECT id FROM class_vip_subscriptions WHERE class_id = ?').get(DEMO_CLASS_ID)
+  if (existing) {
+    await db.prepare(`
+      UPDATE class_vip_subscriptions
+      SET plan = 'demo', status = 'active', expires_at = ?, updated_at = ?
+      WHERE class_id = ?
+    `).run(DEMO_VIP_NEVER_EXPIRES_AT, now, DEMO_CLASS_ID)
+    return
   }
 
+  await db.prepare(`
+    INSERT INTO class_vip_subscriptions (id, class_id, plan, status, started_at, expires_at, created_at, updated_at)
+    VALUES (?, ?, 'demo', 'active', ?, ?, ?, ?)
+  `).run(DEMO_VIP_SUBSCRIPTION_ID, DEMO_CLASS_ID, now, DEMO_VIP_NEVER_EXPIRES_AT, now, now)
+}
+
+async function seedDemoData(db, guestUserId) {
   const now = Date.now()
   const insertData = db.transaction(async () => {
     await db.prepare(
@@ -155,6 +167,8 @@ export async function ensureDemoData(db, guestUserId) {
         )
       }
     }
+
+    await upsertDemoVipSubscription(db, now)
   })
 
   await insertData()
@@ -163,4 +177,48 @@ export async function ensureDemoData(db, guestUserId) {
     className: '向日葵班 · 成长花园',
     students: DEMO_STUDENTS.length
   }
+}
+
+/**
+ * 为游客账户创建固定的演示班级。
+ * 演示数据独立归属游客账户，不会读取、修改或混入真实老师的数据。
+ * 返回值用于启动日志和独立种子命令的反馈。
+ */
+export async function ensureDemoData(db, guestUserId) {
+  const existingDemo = await db.prepare('SELECT id FROM classes WHERE id = ?').get(DEMO_CLASS_ID)
+  if (existingDemo) {
+    return { seeded: false, reason: '演示数据已存在' }
+  }
+
+  return seedDemoData(db, guestUserId)
+}
+
+/**
+ * 确保已存在的演示班级拥有永久 VIP（用于升级旧数据）。
+ */
+export async function ensureDemoVip(db) {
+  const demoClass = await db.prepare('SELECT id FROM classes WHERE id = ?').get(DEMO_CLASS_ID)
+  if (!demoClass) {
+    return { ensured: false, reason: '演示班级不存在' }
+  }
+
+  const vip = await db.prepare('SELECT plan, status, expires_at FROM class_vip_subscriptions WHERE class_id = ?').get(DEMO_CLASS_ID)
+  if (vip?.plan === 'demo' && vip.status === 'active' && vip.expires_at >= DEMO_VIP_NEVER_EXPIRES_AT) {
+    return { ensured: false, reason: '演示班级 VIP 已配置' }
+  }
+
+  await upsertDemoVipSubscription(db, Date.now())
+  return { ensured: true }
+}
+
+/**
+ * 删除并重新写入演示班级数据，用于每日定时重置。
+ */
+export async function resetDemoData(db, guestUserId) {
+  const existingDemo = await db.prepare('SELECT id FROM classes WHERE id = ?').get(DEMO_CLASS_ID)
+  if (existingDemo) {
+    await deleteClassData(db, DEMO_CLASS_ID)
+  }
+
+  return seedDemoData(db, guestUserId)
 }

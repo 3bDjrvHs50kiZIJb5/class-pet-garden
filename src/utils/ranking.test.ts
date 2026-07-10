@@ -1,13 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import {
-  categoryMeta,
   getRankBadge,
   getRankBadgeStyle,
   getRankSubtitle,
   getRankingStats,
   sortRanking,
   takeTopRanking,
-  totalRankingMeta,
 } from './ranking'
 import type { RankingStudent } from './ranking'
 

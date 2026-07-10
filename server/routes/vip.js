@@ -40,6 +40,14 @@ export const VIP_PLANS = {
     days: 0,
     description: '管理员手动授权',
   },
+  demo: {
+    id: 'demo',
+    label: '演示永久会员',
+    price: 0,
+    unit: '永久',
+    days: 0,
+    description: '演示班级专属，永不过期',
+  },
 }
 
 export const PUBLIC_VIP_PLAN_IDS = ['month', 'semester', 'year']
@@ -55,14 +63,16 @@ const VIP_BENEFITS = [
 export function normalizeVipRow(row) {
   if (!row) return null
   const now = Date.now()
-  const isExpired = row.expires_at <= now
+  const isDemoVip = row.class_id === DEMO_CLASS_ID && row.plan === 'demo'
+  const isExpired = isDemoVip ? false : row.expires_at <= now
   return {
     plan: row.plan,
     planLabel: VIP_PLANS[row.plan]?.label || row.plan,
     status: isExpired ? 'expired' : row.status,
     startedAt: row.started_at,
     expiresAt: row.expires_at,
-    isActive: !isExpired && row.status === 'active',
+    isActive: isDemoVip || (!isExpired && row.status === 'active'),
+    neverExpires: isDemoVip,
   }
 }
 

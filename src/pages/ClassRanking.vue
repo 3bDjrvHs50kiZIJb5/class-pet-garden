@@ -6,6 +6,7 @@ import RankListRow from '@/components/ranking/RankListRow.vue'
 import RankPodium from '@/components/ranking/RankPodium.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
+import { getCurrentClassStorageKey as buildCurrentClassStorageKey, saveCurrentClassId } from '@/composables/useClassVip'
 import type { Class } from '@/types'
 import {
   categoryMeta,
@@ -56,8 +57,8 @@ const groupedRankings = computed(() => [
   })),
 ])
 
-function getCurrentClassStorageKey() {
-  return `pet-garden-current-class-${user.value?.id || 'guest'}`
+function currentClassStorageKey() {
+  return buildCurrentClassStorageKey(user.value?.id)
 }
 
 function requestConfigForCurrentClass() {
@@ -74,7 +75,7 @@ async function loadClasses() {
       categoryRankings.value = { 学习: [], 行为: [], 健康: [], 其他: [] }
       return
     }
-    const savedClassId = localStorage.getItem(getCurrentClassStorageKey())
+    const savedClassId = localStorage.getItem(currentClassStorageKey())
     const savedClass = savedClassId ? classes.value.find(cls => cls.id === savedClassId) : null
     await selectClass(savedClass || classes.value[0])
   } catch (error) {
@@ -86,7 +87,7 @@ async function loadClasses() {
 async function selectClass(cls: Class) {
   isDemoMode.value = cls.id === DEMO_CLASS_ID
   currentClass.value = cls
-  localStorage.setItem(getCurrentClassStorageKey(), cls.id)
+  saveCurrentClassId(cls.id, user.value?.id)
   await loadRanking()
 }
 

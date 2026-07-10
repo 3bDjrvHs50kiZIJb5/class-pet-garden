@@ -6,6 +6,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import { STUDENTS_IMPORTED_EVENT } from '@/composables/useStudentImport'
+import { getCurrentClassStorageKey as buildCurrentClassStorageKey, saveCurrentClassId } from '@/composables/useClassVip'
 import type { Class, ClassTask, ClassTaskDetail, Rule, Student, TaskStudentItem } from '@/types'
 import { BADGE_CLASS } from '@/utils/badge'
 
@@ -106,8 +107,8 @@ const confirmDialog = ref({
   onConfirm: () => {}
 })
 
-function getCurrentClassStorageKey() {
-  return `pet-garden-current-class-${user.value?.id || 'guest'}`
+function currentClassStorageKey() {
+  return buildCurrentClassStorageKey(user.value?.id)
 }
 
 function requestConfigForCurrentClass() {
@@ -190,7 +191,7 @@ async function loadClasses() {
     currentClass.value = null
     return
   }
-  const savedClassId = localStorage.getItem(getCurrentClassStorageKey())
+  const savedClassId = localStorage.getItem(currentClassStorageKey())
   const savedClass = savedClassId ? classes.value.find(c => c.id === savedClassId) : null
   await selectClass(savedClass || classes.value[0])
 }
@@ -198,7 +199,7 @@ async function loadClasses() {
 async function selectClass(cls: Class) {
   isDemoMode.value = cls.id === DEMO_CLASS_ID
   currentClass.value = cls
-  localStorage.setItem(getCurrentClassStorageKey(), cls.id)
+  saveCurrentClassId(cls.id, user.value?.id)
   detailTask.value = null
   selectedStudentIds.value = new Set()
   await Promise.all([loadTasks(), loadStudents(), loadRules()])
@@ -516,11 +517,11 @@ onUnmounted(() => {
             </div>
             <div class="rounded-2xl bg-[#f5f3ff] px-4 py-3">
               <p class="text-xl font-bold text-[#7c3aed]">{{ taskStats.pendingSlots }}</p>
-              <p class="mt-0.5 text-sm font-medium text-[#8b7cb0]">待完成人次</p>
+              <p class="mt-0.5 text-sm font-medium text-[#8b7cb0]">待完成</p>
             </div>
           </div>
         </div>
-        <div class="relative flex min-h-56 items-center justify-center overflow-hidden bg-[#fff4ea] px-8">
+        <div class="relative hidden min-h-56 items-center justify-center overflow-hidden bg-[#fff4ea] px-8 lg:flex">
           <div class="absolute right-8 top-7 rounded-full bg-white/80 px-3 py-1.5 text-sm font-bold text-[#ae6a3e]">自动加分</div>
           <div class="absolute bottom-0 h-20 w-[120%] rounded-t-[100%] bg-[#f8e6d4]"></div>
           <div class="relative z-10 grid grid-cols-2 gap-3">

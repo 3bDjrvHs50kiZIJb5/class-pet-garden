@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import { useAuth } from './useAuth'
+import { saveCurrentClassId, getSavedClassId } from './useClassVip'
 import { toast } from './useToast'
 import type { Class } from '@/types'
 
@@ -27,7 +28,7 @@ export function useStudentImport() {
   const showImportStudents = computed(() => currentClassStudentCount.value === 0)
 
   async function refreshCurrentClassStudentCount() {
-    const savedClassId = localStorage.getItem(getCurrentClassStorageKey())
+    const savedClassId = getSavedClassId(user.value?.id)
     if (!savedClassId) {
       currentClassStudentCount.value = null
       return
@@ -40,10 +41,6 @@ export function useStudentImport() {
       console.error('加载当前班级学生数失败:', error)
       currentClassStudentCount.value = null
     }
-  }
-
-  function getCurrentClassStorageKey() {
-    return `pet-garden-current-class-${user.value?.id || 'guest'}`
   }
 
   const selectedImportClass = computed(() =>
@@ -64,7 +61,7 @@ export function useStudentImport() {
       return
     }
 
-    const savedClassId = localStorage.getItem(getCurrentClassStorageKey())
+    const savedClassId = getSavedClassId(user.value?.id)
     const savedClass = savedClassId
       ? importClasses.value.find(cls => cls.id === savedClassId)
       : null
@@ -115,7 +112,7 @@ export function useStudentImport() {
 
   function selectImportClass(classId: string) {
     selectedImportClassId.value = classId
-    localStorage.setItem(getCurrentClassStorageKey(), classId)
+    saveCurrentClassId(classId, user.value?.id)
   }
 
   async function createClassInImport() {
@@ -129,7 +126,7 @@ export function useStudentImport() {
       const res = await api.post('/classes', { name: newImportClassName.value.trim() })
       await loadImportClasses()
       selectedImportClassId.value = res.data.id
-      localStorage.setItem(getCurrentClassStorageKey(), res.data.id)
+      saveCurrentClassId(res.data.id, user.value?.id)
       newImportClassName.value = ''
       showCreateClassInline.value = false
       toast.success('班级创建成功')
@@ -177,7 +174,7 @@ export function useStudentImport() {
         classId,
         students
       })
-      localStorage.setItem(getCurrentClassStorageKey(), classId)
+      saveCurrentClassId(classId, user.value?.id)
       toast.success(`成功导入 ${res.data.imported} 名学生到「${selectedImportClass.value?.name || '班级'}」`)
       closeImportModal()
       notifyClassesChanged(classId, res.data.imported)

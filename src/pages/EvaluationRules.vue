@@ -185,7 +185,7 @@ onMounted(loadRules)
             </div>
           </div>
         </div>
-        <div class="relative flex min-h-56 items-center justify-center overflow-hidden bg-[#fff4ea] px-8">
+        <div class="relative hidden min-h-56 items-center justify-center overflow-hidden bg-[#fff4ea] px-8 lg:flex">
           <div class="absolute right-8 top-7 rounded-full bg-white/80 px-3 py-1.5 text-sm font-bold text-[#ae6a3e]">四类标准</div>
           <div class="absolute bottom-0 h-20 w-[120%] rounded-t-[100%] bg-[#f8e6d4]"></div>
           <div class="relative z-10 grid grid-cols-2 gap-3">

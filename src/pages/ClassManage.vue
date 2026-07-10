@@ -7,8 +7,6 @@ import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import type { AdminClassOverview, AdminMemberItem, AdminMemberOverview, ClassVipItem } from '@/types'
 
-const DEMO_CLASS_ID = 'demo-class-2026'
-
 const router = useRouter()
 const { api, isAdmin } = useAuth()
 const toast = useToast()
@@ -344,11 +342,11 @@ onMounted(() => {
               </div>
               <div class="rounded-2xl bg-[#ecfdf5] px-4 py-3">
                 <p class="text-xl font-bold text-[#059669]">{{ summary.vipActive }}</p>
-                <p class="mt-0.5 text-sm font-medium text-[#6b8f7d]">VIP 生效中</p>
+                <p class="mt-0.5 text-sm font-medium text-[#6b8f7d]">已生效</p>
               </div>
               <div class="rounded-2xl bg-[#fff7ed] px-4 py-3">
                 <p class="text-xl font-bold text-[#ea580c]">{{ summary.vipInactive }}</p>
-                <p class="mt-0.5 text-sm font-medium text-[#b07a4f]">未授权 / 已过期</p>
+                <p class="mt-0.5 text-sm font-medium text-[#b07a4f]">未生效</p>
               </div>
             </template>
             <template v-else>

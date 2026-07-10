@@ -9,7 +9,8 @@ import { initDb, db } from './db.js'
 import { hashPassword } from './utils/password.js'
 import { ensureRuleUserIdColumn } from './utils/rules.js'
 import { calculateLevel } from './utils/level.js'
-import { ensureDemoData } from './demo-seed.js'
+import { ensureDemoData, ensureDemoVip } from './demo-seed.js'
+import { startDemoResetScheduler } from './utils/demoResetScheduler.js'
 
 // 导入路由
 import authRoutes from './routes/auth.js'
@@ -249,6 +250,11 @@ async function bootstrap() {
     console.log(`🌻 已创建演示数据：${demoSeedResult.className}（${demoSeedResult.students} 名学生）`)
   }
 
+  const demoVipResult = await ensureDemoVip(db)
+  if (demoVipResult.ensured) {
+    console.log('✨ 已为演示班级开通永久 VIP')
+  }
+
   // 初始化默认评价规则
   const rulesCount = await db.prepare('SELECT COUNT(*) as count FROM evaluation_rules').get()
   if (rulesCount && rulesCount.count === 0) {
@@ -296,10 +302,17 @@ process.on('unhandledRejection', (reason, promise) => {
 })
 
 let server
+let stopDemoResetScheduler = null
+
+async function getGuestUserId() {
+  const guest = await db.prepare('SELECT id FROM users WHERE username = ?').get('guest')
+  return guest?.id ?? null
+}
 
 bootstrap()
   .then((httpServer) => {
     server = httpServer
+    stopDemoResetScheduler = startDemoResetScheduler(db, getGuestUserId)
   })
   .catch((err) => {
     console.error('Failed to start server:', err)
@@ -320,6 +333,10 @@ async function shutdown(signal) {
   forceExitTimer.unref()
 
   try {
+    if (stopDemoResetScheduler) {
+      stopDemoResetScheduler()
+      stopDemoResetScheduler = null
+    }
     if (server) {
       if (typeof server.closeAllConnections === 'function') {
         server.closeAllConnections()

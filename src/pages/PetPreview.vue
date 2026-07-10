@@ -45,12 +45,12 @@ function closeDetail() {
           <h1 class="mt-3 font-serif text-4xl font-bold tracking-tight text-[#422d20] sm:text-5xl">宠物图鉴</h1>
           <p class="mt-4 max-w-xl text-sm leading-7 text-[#806b5b] sm:text-base">认识每一位会陪伴孩子成长的小伙伴。每一次积极表现，都会点亮它们的新模样。</p>
           <div class="mt-7 flex flex-wrap gap-3">
-            <div class="rounded-2xl bg-[#fff3e7] px-4 py-3"><p class="text-xl font-bold text-[#b76129]">{{ PET_TYPES.length }}</p><p class="mt-0.5 text-sm font-medium text-[#9e704f]">可领养伙伴</p></div>
+            <div class="rounded-2xl bg-[#fff3e7] px-4 py-3"><p class="text-xl font-bold text-[#b76129]">{{ PET_TYPES.length }}</p><p class="mt-0.5 text-sm font-medium text-[#9e704f]">可领养</p></div>
             <div class="rounded-2xl bg-[#fff8f3] px-4 py-3"><p class="text-xl font-bold text-[#b76129]">8</p><p class="mt-0.5 text-sm font-medium text-[#9e704f]">成长阶段</p></div>
             <div class="rounded-2xl bg-[#fff8f3] px-4 py-3"><p class="text-xl font-bold text-[#b76129]">{{ normalPets.length + mythicalPets.length }}</p><p class="mt-0.5 text-sm font-medium text-[#9e704f]">当前显示</p></div>
           </div>
         </div>
-        <div class="relative flex min-h-56 items-end justify-center overflow-hidden bg-[#fff4ea] px-8 pb-10 pt-8 sm:pb-14">
+        <div class="relative hidden min-h-56 items-end justify-center overflow-hidden bg-[#fff4ea] px-8 pb-10 pt-8 sm:pb-14 lg:flex">
           <div class="absolute right-8 top-7 rounded-full bg-white/80 px-3 py-1.5 text-sm font-bold text-[#ae6a3e]">一起长大 ♡</div>
           <div class="absolute bottom-0 h-20 w-[120%] rounded-t-[100%] bg-[#f8e6d4]"></div>
           <div class="relative z-10 flex items-end justify-center gap-4 sm:gap-5">

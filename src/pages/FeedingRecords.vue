@@ -4,6 +4,7 @@ import AppShell from '@/components/AppShell.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
+import { getCurrentClassStorageKey as buildCurrentClassStorageKey, saveCurrentClassId } from '@/composables/useClassVip'
 import type { Class, EvaluationRecord } from '@/types'
 
 const categories = ['学习', '行为', '健康', '其他'] as const
@@ -42,8 +43,8 @@ const confirmDialog = ref({
   onConfirm: () => {}
 })
 
-function getCurrentClassStorageKey() {
-  return `pet-garden-current-class-${user.value?.id || 'guest'}`
+function currentClassStorageKey() {
+  return buildCurrentClassStorageKey(user.value?.id)
 }
 
 function requestConfigForCurrentClass() {
@@ -120,7 +121,7 @@ async function loadClasses() {
       currentClass.value = null
       return
     }
-    const savedClassId = localStorage.getItem(getCurrentClassStorageKey())
+    const savedClassId = localStorage.getItem(currentClassStorageKey())
     const savedClass = savedClassId ? classes.value.find(cls => cls.id === savedClassId) : null
     await selectClass(savedClass || classes.value[0])
   } catch (error) {
@@ -133,7 +134,7 @@ async function selectClass(cls: Class) {
   isDemoMode.value = cls.id === DEMO_CLASS_ID
   currentClass.value = cls
   page.value = 1
-  localStorage.setItem(getCurrentClassStorageKey(), cls.id)
+  saveCurrentClassId(cls.id, user.value?.id)
   await loadRecords()
 }
 
@@ -227,7 +228,7 @@ onMounted(async () => {
             </div>
           </div>
         </div>
-        <div class="relative flex min-h-56 items-center justify-center overflow-hidden bg-[#fff4ea] px-8 pb-10 pt-8 sm:pb-14">
+        <div class="relative hidden min-h-56 items-center justify-center overflow-hidden bg-[#fff4ea] px-8 pb-10 pt-8 sm:pb-14 lg:flex">
           <div class="absolute right-8 top-7 rounded-full bg-white/80 px-3 py-1.5 text-sm font-bold text-[#ae6a3e]">四类足迹</div>
           <div class="absolute bottom-0 h-20 w-[120%] rounded-t-[100%] bg-[#f8e6d4]"></div>
           <div class="relative z-10 grid grid-cols-2 gap-3">
