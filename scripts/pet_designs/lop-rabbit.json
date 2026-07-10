@@ -1,0 +1,73 @@
+{
+  "id": "lop-rabbit",
+  "name": "lop rabbit",
+  "description": "垂耳兔，下垂长耳，可爱温顺",
+  "features": "long floppy ears, round body, soft fur, gentle eyes",
+  "theme": "胡萝卜/田园/可爱/小精灵",
+  "levels": [
+    {
+      "level": 1,
+      "name": "小垂耳",
+      "accessories": "橙色小蝴蝶结",
+      "elements": "small orange bow",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "胡萝卜精灵",
+      "accessories": "胡萝卜项圈",
+      "elements": "carrot-shaped collar",
+      "background": "carrot field",
+      "description": "胡萝卜元素"
+    },
+    {
+      "level": 3,
+      "name": "田园小兔",
+      "accessories": "草帽+小花",
+      "elements": "straw hat with small flower",
+      "background": "countryside meadow",
+      "description": "田园主题"
+    },
+    {
+      "level": 4,
+      "name": "兔子贵族",
+      "accessories": "珍珠皇冠+胡萝卜披风",
+      "elements": "pearl crown, carrot-patterned cape",
+      "background": "garden with flowers",
+      "description": "贵族气质"
+    },
+    {
+      "level": 5,
+      "name": "胡萝卜王子",
+      "accessories": "胡萝卜皇冠+田园披风",
+      "elements": "carrot crown, countryside cape",
+      "background": "golden meadow",
+      "description": "王子气质"
+    },
+    {
+      "level": 6,
+      "name": "田园天使",
+      "accessories": "光环+小翅膀+胡萝卜",
+      "elements": "halo, small wings, holding carrot",
+      "background": "celestial garden",
+      "description": "田园天使"
+    },
+    {
+      "level": 7,
+      "name": "田园守护者",
+      "accessories": "华丽皇冠+大翅膀+胡萝卜光芒",
+      "elements": "ornate crown, large wings, carrot glow",
+      "background": "sacred garden",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "田园之神",
+      "accessories": "神圣皇冠+巨大翅膀+漂浮+胡萝卜符号",
+      "elements": "divine crown, massive wings, floating, carrot symbols glowing",
+      "background": "divine countryside realm",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

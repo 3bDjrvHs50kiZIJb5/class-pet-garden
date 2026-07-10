@@ -1,0 +1,73 @@
+{
+  "id": "border-collie",
+  "name": "border collie",
+  "description": "边牧，黑白/三色，聪明机智，工作犬",
+  "features": "black and white fur, intelligent eyes, alert expression, medium build",
+  "theme": "智慧/星星/牧羊/学者",
+  "levels": [
+    {
+      "level": 1,
+      "name": "聪明小边牧",
+      "accessories": "蓝色小围巾",
+      "elements": "small blue bandana",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "星星学徒",
+      "accessories": "星星项圈",
+      "elements": "star-shaped collar with small stars",
+      "background": "starry night",
+      "description": "智慧之星"
+    },
+    {
+      "level": 3,
+      "name": "小博士",
+      "accessories": "小眼镜+毕业帽",
+      "elements": "small round glasses, mini graduation cap",
+      "background": "library with books",
+      "description": "学者形象"
+    },
+    {
+      "level": 4,
+      "name": "智慧牧羊人",
+      "accessories": "牧羊杖+星星徽章",
+      "elements": "shepherd's staff, star badge",
+      "background": "green pasture with sheep",
+      "description": "工作犬荣耀"
+    },
+    {
+      "level": 5,
+      "name": "智慧王子",
+      "accessories": "星星皇冠+学者披风",
+      "elements": "star crown, scholar's cape",
+      "background": "celestial library",
+      "description": "智慧贵族"
+    },
+    {
+      "level": 6,
+      "name": "星辰守护者",
+      "accessories": "星星光环+智慧翅膀",
+      "elements": "starry halo, wings with star patterns",
+      "background": "cosmic star field",
+      "description": "智慧天使"
+    },
+    {
+      "level": 7,
+      "name": "智慧大天使",
+      "accessories": "华丽星星皇冠+大翅膀+星光",
+      "elements": "ornate star crown, large cosmic wings, starlight",
+      "background": "sacred cosmic realm",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "智慧之神",
+      "accessories": "神圣星星皇冠+巨大翅膀+漂浮+星系光芒",
+      "elements": "divine star crown, massive wings, floating, galaxy glow",
+      "background": "divine cosmic realm with nebula",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

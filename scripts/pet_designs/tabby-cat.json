@@ -1,0 +1,73 @@
+{
+  "id": "tabby-cat",
+  "name": "tabby cat",
+  "description": "虎斑猫，条纹毛发，灵动活泼",
+  "features": "striped fur pattern, agile body, alert eyes, striped tail",
+  "theme": "条纹/灵动/夜行/月光",
+  "levels": [
+    {
+      "level": 1,
+      "name": "小虎斑",
+      "accessories": "绿色小领结",
+      "elements": "small green bow tie",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "条纹精灵",
+      "accessories": "条纹项圈+铃铛",
+      "elements": "striped collar with small bell",
+      "background": "soft green gradient",
+      "description": "条纹元素"
+    },
+    {
+      "level": 3,
+      "name": "夜行小侠",
+      "accessories": "小披风+眼罩",
+      "elements": "small cape, eye mask",
+      "background": "night sky with stars",
+      "description": "夜行主题"
+    },
+    {
+      "level": 4,
+      "name": "月光贵族",
+      "accessories": "月亮徽章+条纹披风",
+      "elements": "moon badge, striped cape",
+      "background": "moonlit garden",
+      "description": "月光主题"
+    },
+    {
+      "level": 5,
+      "name": "条纹王子",
+      "accessories": "小皇冠+月光披风",
+      "elements": "small crown, moonlight cape",
+      "background": "moonlight rays",
+      "description": "王子气质"
+    },
+    {
+      "level": 6,
+      "name": "月光天使",
+      "accessories": "月光光环+翅膀",
+      "elements": "moonlight halo, silver wings",
+      "background": "celestial moon",
+      "description": "月光天使"
+    },
+    {
+      "level": 7,
+      "name": "夜行守护者",
+      "accessories": "华丽月亮皇冠+大翅膀+星光",
+      "elements": "ornate moon crown, large wings, starlight",
+      "background": "sacred night temple",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "月光之神",
+      "accessories": "神圣月亮皇冠+巨大翅膀+漂浮+月光符号",
+      "elements": "divine moon crown, massive wings, floating, moon symbols glowing",
+      "background": "divine moon realm",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

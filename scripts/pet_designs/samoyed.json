@@ -1,0 +1,73 @@
+{
+  "id": "samoyed",
+  "name": "samoyed",
+  "description": "萨摩耶，白色长毛，微笑天使",
+  "features": "pure white fluffy fur, perpetual smile, dark eyes, fluffy tail curled over back",
+  "theme": "微笑/天使/云朵/纯洁",
+  "levels": [
+    {
+      "level": 1,
+      "name": "微笑天使",
+      "accessories": "粉色小花",
+      "elements": "small pink flower on ear",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "云朵精灵",
+      "accessories": "云朵项圈",
+      "elements": "fluffy cloud-shaped collar",
+      "background": "soft clouds",
+      "description": "云朵元素"
+    },
+    {
+      "level": 3,
+      "name": "小天使",
+      "accessories": "小光环+迷你翅膀",
+      "elements": "small golden halo, tiny white wings",
+      "background": "golden light rays",
+      "description": "天使特征初现"
+    },
+    {
+      "level": 4,
+      "name": "微笑贵族",
+      "accessories": "珍珠皇冠+云朵披风",
+      "elements": "pearl-studded crown, cloud-patterned cape",
+      "background": "heavenly clouds with rainbow",
+      "description": "贵族气质"
+    },
+    {
+      "level": 5,
+      "name": "天使王子",
+      "accessories": "金色皇冠+天使翅膀",
+      "elements": "golden crown, white angel wings",
+      "background": "celestial golden clouds",
+      "description": "正式成为天使"
+    },
+    {
+      "level": 6,
+      "name": "微笑大天使",
+      "accessories": "大翅膀+光环+光芒",
+      "elements": "large white wings, golden halo, radiant smile glow",
+      "background": "angelic realm with light",
+      "description": "大天使形象"
+    },
+    {
+      "level": 7,
+      "name": "天堂守护者",
+      "accessories": "华丽皇冠+巨大翅膀+神圣光芒",
+      "elements": "ornate golden crown, massive white wings, divine light",
+      "background": "celestial heaven",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "微笑之神",
+      "accessories": "神圣皇冠+超大翅膀+漂浮+光芒+微笑光环",
+      "elements": "divine crown, massive angelic wings, floating, glowing smile aura",
+      "background": "divine heavenly realm",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "id": "husky",
+  "name": "siberian husky",
+  "description": "哈士奇，蓝眼，狼-like，冰雪主题",
+  "features": "gray and white fur, striking blue eyes, wolf-like appearance, thick coat",
+  "theme": "冰雪/极光/狼/北极",
+  "levels": [
+    {
+      "level": 1,
+      "name": "小雪球",
+      "accessories": "蓝色小围巾",
+      "elements": "small blue scarf around neck",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "冰雪精灵",
+      "accessories": "雪花项圈",
+      "elements": "snowflake-shaped collar with crystals",
+      "background": "snowy landscape",
+      "description": "冰雪元素"
+    },
+    {
+      "level": 3,
+      "name": "极光守护者",
+      "accessories": "极光光环+冰晶",
+      "elements": "aurora borealis halo, ice crystals floating",
+      "background": "northern lights sky",
+      "description": "极光主题"
+    },
+    {
+      "level": 4,
+      "name": "雪狼勇士",
+      "accessories": "冰晶护甲+狼牙项链",
+      "elements": "crystal armor pieces, wolf tooth necklace",
+      "background": "arctic ice cave",
+      "description": "狼战士形象"
+    },
+    {
+      "level": 5,
+      "name": "冰雪王子",
+      "accessories": "冰晶皇冠+雪花披风",
+      "elements": "ice crystal crown, snowflake-patterned cape",
+      "background": "frozen palace",
+      "description": "冰雪贵族"
+    },
+    {
+      "level": 6,
+      "name": "极光天使",
+      "accessories": "极光翅膀+冰晶光环",
+      "elements": "aurora-colored wings, ice crystal halo",
+      "background": "celestial aurora realm",
+      "description": "极光天使形象"
+    },
+    {
+      "level": 7,
+      "name": "北极守护者",
+      "accessories": "华丽冰晶皇冠+大翅膀+极光光芒",
+      "elements": "ornate ice crown, large aurora wings, glowing northern lights",
+      "background": "sacred arctic temple",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "冰雪之神",
+      "accessories": "神圣冰晶皇冠+巨大极光翅膀+漂浮+雪花符号",
+      "elements": "divine ice crown, massive aurora wings, floating, snowflake symbols glowing",
+      "background": "divine frozen realm with aurora",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

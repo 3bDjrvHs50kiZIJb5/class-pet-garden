@@ -1,0 +1,73 @@
+{
+  "id": "white-tiger",
+  "name": "white tiger",
+  "description": "白虎，白色虎纹，威严霸气",
+  "features": "white fur with black stripes, powerful build, piercing eyes, majestic presence",
+  "theme": "威严/霸气/白色/虎纹",
+  "levels": [
+    {
+      "level": 1,
+      "name": "小白虎",
+      "accessories": "银色小铃铛",
+      "elements": "small silver bell around neck, prominently displayed",
+      "background": "pure white background",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "虎纹精灵",
+      "accessories": "虎纹项圈",
+      "elements": "tiger stripe collar, clearly visible",
+      "background": "pure white background",
+      "description": "虎纹元素"
+    },
+    {
+      "level": 3,
+      "name": "威严小虎",
+      "accessories": "小护甲+虎纹",
+      "elements": "small armor piece on chest, tiger markings, prominently displayed",
+      "background": "pure white background",
+      "description": "威严主题"
+    },
+    {
+      "level": 4,
+      "name": "虎族贵族",
+      "accessories": "银色皇冠+虎纹披风",
+      "elements": "silver crown, tiger stripe cape, clearly visible",
+      "background": "pure white background",
+      "description": "贵族气质"
+    },
+    {
+      "level": 5,
+      "name": "白虎王子",
+      "accessories": "华丽皇冠+披风+虎纹",
+      "elements": "ornate silver crown, flowing cape with tiger stripes, prominently displayed",
+      "background": "pure white background",
+      "description": "王子气质"
+    },
+    {
+      "level": 6,
+      "name": "威严天使",
+      "accessories": "光环+翅膀+虎纹",
+      "elements": "golden halo, white wings, tiger stripe patterns, clearly visible",
+      "background": "pure white background",
+      "description": "威严天使"
+    },
+    {
+      "level": 7,
+      "name": "白虎守护者",
+      "accessories": "华丽皇冠+大翅膀+虎纹光芒",
+      "elements": "ornate silver crown, large wings, tiger glow, prominently displayed",
+      "background": "pure white background",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "白虎之神",
+      "accessories": "神圣皇冠+巨大翅膀+漂浮+虎纹符号",
+      "elements": "divine crown, massive wings, floating pose, tiger symbols glowing, clearly visible",
+      "background": "pure white background with golden light",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

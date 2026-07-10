@@ -1,0 +1,73 @@
+{
+  "id": "red-panda",
+  "name": "red panda",
+  "description": "小熊猫，红棕毛，大尾巴，可爱",
+  "features": "reddish-brown fur, white face markings, big fluffy tail, pointed ears",
+  "theme": "竹子/森林/可爱/小熊猫",
+  "levels": [
+    {
+      "level": 1,
+      "name": "小小熊猫",
+      "accessories": "绿色小领结",
+      "elements": "small green bow tie",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "竹子精灵",
+      "accessories": "竹叶项圈",
+      "elements": "bamboo leaf collar",
+      "background": "bamboo forest",
+      "description": "竹子元素"
+    },
+    {
+      "level": 3,
+      "name": "森林小侠",
+      "accessories": "小披风+竹叶",
+      "elements": "small cape, bamboo leaves",
+      "background": "green forest",
+      "description": "森林主题"
+    },
+    {
+      "level": 4,
+      "name": "竹林贵族",
+      "accessories": "竹叶皇冠+披风",
+      "elements": "bamboo crown, cape",
+      "background": "bamboo grove",
+      "description": "贵族气质"
+    },
+    {
+      "level": 5,
+      "name": "竹子王子",
+      "accessories": "华丽竹叶皇冠+披风",
+      "elements": "ornate bamboo crown, bamboo cape",
+      "background": "golden bamboo forest",
+      "description": "王子气质"
+    },
+    {
+      "level": 6,
+      "name": "森林天使",
+      "accessories": "光环+翅膀+竹子",
+      "elements": "halo, wings, holding bamboo",
+      "background": "celestial forest",
+      "description": "森林天使"
+    },
+    {
+      "level": 7,
+      "name": "竹林守护者",
+      "accessories": "华丽皇冠+大翅膀+竹叶光芒",
+      "elements": "ornate crown, large wings, bamboo glow",
+      "background": "sacred bamboo forest",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "森林之神",
+      "accessories": "神圣皇冠+巨大翅膀+漂浮+竹子符号",
+      "elements": "divine crown, massive wings, floating, bamboo symbols glowing",
+      "background": "divine bamboo realm",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

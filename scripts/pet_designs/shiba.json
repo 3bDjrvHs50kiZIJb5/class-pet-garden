@@ -1,0 +1,73 @@
+{
+  "id": "shiba",
+  "name": "shiba inu",
+  "description": "日本柴犬，卷尾，赤色毛发，表情丰富",
+  "features": "reddish-brown fur, curled tail, pointed ears, fox-like face, black eyes",
+  "theme": "日本/樱花/武士/天狗",
+  "levels": [
+    {
+      "level": 1,
+      "name": "柴柴宝宝",
+      "accessories": "红色小铃铛",
+      "elements": "small red bell on neck",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "樱花使者",
+      "accessories": "樱花项圈",
+      "elements": "cherry blossom petal collar",
+      "background": "cherry blossom background",
+      "description": "日本国花元素"
+    },
+    {
+      "level": 3,
+      "name": "武士学徒",
+      "accessories": "迷你武士头盔",
+      "elements": "small samurai helmet on head",
+      "background": "Japanese castle background",
+      "description": "武士文化元素"
+    },
+    {
+      "level": 4,
+      "name": "和服贵族",
+      "accessories": "金色和服腰带+家纹",
+      "elements": "golden obi sash with family crest",
+      "background": "traditional Japanese garden",
+      "description": "传统服饰元素"
+    },
+    {
+      "level": 5,
+      "name": "柴犬大名",
+      "accessories": "日式皇冠+披风+扇子",
+      "elements": "Japanese-style crown, cape, folding fan",
+      "background": "Japanese palace with cherry blossoms",
+      "description": "贵族气质"
+    },
+    {
+      "level": 6,
+      "name": "天狗战士",
+      "accessories": "天狗面具+翅膀+羽扇",
+      "elements": "tengu mask, small black wings, feather fan",
+      "background": "mountain with red torii gate",
+      "description": "日本神话元素"
+    },
+    {
+      "level": 7,
+      "name": "大天狗",
+      "accessories": "大天狗面具+巨大翅膀+光环",
+      "elements": "great tengu mask, large black wings, red halo",
+      "background": "sacred Japanese mountain",
+      "description": "强大守护形象"
+    },
+    {
+      "level": 8,
+      "name": "天狗之神",
+      "accessories": "神圣天狗面具+超大翅膀+漂浮+樱花符号",
+      "elements": "divine tengu mask, massive wings, floating, cherry blossom symbols glowing",
+      "background": "divine Japanese realm with torii gates",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

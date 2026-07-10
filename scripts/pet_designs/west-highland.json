@@ -1,0 +1,73 @@
+{
+  "id": "west-highland",
+  "name": "west highland white terrier",
+  "description": "西高地白梗，白色短毛，立耳，活泼可爱",
+  "features": "pure white short fur, upright pointed ears, small black nose, bright eyes",
+  "theme": "可爱/苏格兰/勇敢/小骑士",
+  "levels": [
+    {
+      "level": 1,
+      "name": "小白梗",
+      "accessories": "红色小领结",
+      "elements": "small red bow tie",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "苏格兰小勇士",
+      "accessories": "格子围巾",
+      "elements": "tartan plaid scarf",
+      "background": "Scottish highlands",
+      "description": "苏格兰元素"
+    },
+    {
+      "level": 3,
+      "name": "勇敢小骑士",
+      "accessories": "小头盔+迷你剑",
+      "elements": "small knight helmet, tiny sword",
+      "background": "medieval castle",
+      "description": "骑士精神"
+    },
+    {
+      "level": 4,
+      "name": "高地贵族",
+      "accessories": "格子披风+徽章",
+      "elements": "tartan cape with clan badge",
+      "background": "Scottish castle",
+      "description": "贵族气质"
+    },
+    {
+      "level": 5,
+      "name": "小骑士团长",
+      "accessories": "小皇冠+格子披风+剑",
+      "elements": "small crown, tartan cape, sword",
+      "background": "knight's hall",
+      "description": "勇敢领导者"
+    },
+    {
+      "level": 6,
+      "name": "高地守护者",
+      "accessories": "翅膀+光环+盾牌",
+      "elements": "white wings, golden halo, small shield",
+      "background": "celestial highlands",
+      "description": "守护天使形象"
+    },
+    {
+      "level": 7,
+      "name": "勇敢大天使",
+      "accessories": "华丽皇冠+大翅膀+光芒",
+      "elements": "ornate crown, large wings, radiant light",
+      "background": "sacred Scottish realm",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "高地之神",
+      "accessories": "神圣皇冠+巨大翅膀+漂浮+格子光芒",
+      "elements": "divine crown, massive wings, floating, tartan pattern glow",
+      "background": "divine Scottish highlands",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

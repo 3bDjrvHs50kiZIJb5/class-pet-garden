@@ -1,0 +1,73 @@
+{
+  "id": "suanni",
+  "name": "suanni",
+  "description": "狻猊，龙子，狮形，香炉",
+  "features": "lion-like body, dragon features, majestic mane, incense burner association",
+  "theme": "中国/狮子/香炉/威严",
+  "levels": [
+    {
+      "level": 1,
+      "name": "小狻猊",
+      "accessories": "红色小铃铛",
+      "elements": "small red bell",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "香炉精灵",
+      "accessories": "香炉项圈",
+      "elements": "incense burner collar",
+      "background": "soft gold gradient",
+      "description": "香炉元素"
+    },
+    {
+      "level": 3,
+      "name": "威严小狮",
+      "accessories": "小光环+祥云",
+      "elements": "small halo, auspicious clouds",
+      "background": "temple courtyard",
+      "description": "威严主题"
+    },
+    {
+      "level": 4,
+      "name": "狮族贵族",
+      "accessories": "金色皇冠+祥云披风",
+      "elements": "golden crown, cloud cape",
+      "background": "ancient temple",
+      "description": "贵族气质"
+    },
+    {
+      "level": 5,
+      "name": "狻猊王子",
+      "accessories": "华丽金冠+披风",
+      "elements": "ornate golden crown, majestic cape",
+      "background": "golden temple",
+      "description": "王子气质"
+    },
+    {
+      "level": 6,
+      "name": "香炉天使",
+      "accessories": "金色光环+翅膀",
+      "elements": "golden halo, wings",
+      "background": "celestial incense",
+      "description": "香炉天使"
+    },
+    {
+      "level": 7,
+      "name": "守护神兽",
+      "accessories": "华丽皇冠+大翅膀+金光",
+      "elements": "ornate crown, large wings, golden light",
+      "background": "sacred temple",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "狻猊之神",
+      "accessories": "神圣皇冠+巨大翅膀+漂浮+祥云符号",
+      "elements": "divine crown, massive wings, floating, cloud symbols glowing",
+      "background": "divine temple realm",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

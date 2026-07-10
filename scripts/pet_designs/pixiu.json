@@ -1,0 +1,73 @@
+{
+  "id": "pixiu",
+  "name": "pixiu",
+  "description": "貔貅，中国神兽，招财进宝",
+  "features": "lion-like body, dragon head, wings, fierce yet cute appearance",
+  "theme": "中国/招财/金色/神兽",
+  "levels": [
+    {
+      "level": 1,
+      "name": "小貔貅",
+      "accessories": "红色小铃铛",
+      "elements": "small red bell",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "招财精灵",
+      "accessories": "金币项圈",
+      "elements": "gold coin collar",
+      "background": "soft gold gradient",
+      "description": "招财元素"
+    },
+    {
+      "level": 3,
+      "name": "神兽小宝",
+      "accessories": "小光环+元宝",
+      "elements": "small halo, gold ingot",
+      "background": "golden clouds",
+      "description": "神兽主题"
+    },
+    {
+      "level": 4,
+      "name": "招财贵族",
+      "accessories": "金色皇冠+珠宝",
+      "elements": "golden crown, jewels",
+      "background": "treasure chamber",
+      "description": "贵族气质"
+    },
+    {
+      "level": 5,
+      "name": "貔貅王子",
+      "accessories": "华丽金冠+披风",
+      "elements": "ornate golden crown, cape",
+      "background": "golden palace",
+      "description": "王子气质"
+    },
+    {
+      "level": 6,
+      "name": "招财天使",
+      "accessories": "金色光环+翅膀",
+      "elements": "golden halo, wings",
+      "background": "celestial gold",
+      "description": "招财天使"
+    },
+    {
+      "level": 7,
+      "name": "财富守护者",
+      "accessories": "华丽皇冠+大翅膀+金光",
+      "elements": "ornate crown, large wings, golden light",
+      "background": "sacred treasure temple",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "招财之神",
+      "accessories": "神圣皇冠+巨大翅膀+漂浮+金币符号",
+      "elements": "divine crown, massive wings, floating, coin symbols glowing",
+      "background": "divine treasure realm",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

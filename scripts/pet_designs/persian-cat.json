@@ -1,0 +1,73 @@
+{
+  "id": "persian-cat",
+  "name": "persian cat",
+  "description": "波斯猫，扁脸，长毛，优雅高贵",
+  "features": "flat face, long flowing fur, round body, short legs, sweet expression",
+  "theme": "优雅/宝石/皇室/奢华",
+  "levels": [
+    {
+      "level": 1,
+      "name": "小波斯",
+      "accessories": "粉色蝴蝶结",
+      "elements": "pink satin bow",
+      "background": "soft white gradient",
+      "description": "简单优雅的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "宝石精灵",
+      "accessories": "宝石项圈",
+      "elements": "jewel-studded collar",
+      "background": "velvet cushion",
+      "description": "宝石元素"
+    },
+    {
+      "level": 3,
+      "name": "优雅小姐",
+      "accessories": "珍珠项链+蕾丝",
+      "elements": "pearl necklace with lace",
+      "background": "elegant room",
+      "description": "优雅气质"
+    },
+    {
+      "level": 4,
+      "name": "皇室贵妃",
+      "accessories": "宝石皇冠+丝绒披风",
+      "elements": "jeweled crown, velvet cape",
+      "background": "royal chamber",
+      "description": "贵妃形象"
+    },
+    {
+      "level": 5,
+      "name": "波斯公主",
+      "accessories": "华丽皇冠+珠宝+披风",
+      "elements": "ornate crown with gems, jeweled cape",
+      "background": "Persian palace",
+      "description": "公主气质"
+    },
+    {
+      "level": 6,
+      "name": "宝石天使",
+      "accessories": "宝石光环+优雅翅膀",
+      "elements": "jeweled halo, elegant wings",
+      "background": "celestial gems",
+      "description": "奢华天使"
+    },
+    {
+      "level": 7,
+      "name": "奢华守护者",
+      "accessories": "华丽宝石皇冠+大翅膀+光芒",
+      "elements": "ornate jeweled crown, large wings, radiant light",
+      "background": "sacred gem palace",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "奢华之神",
+      "accessories": "神圣宝石皇冠+巨大翅膀+漂浮+珠宝光芒",
+      "elements": "divine jeweled crown, massive wings, floating, jewel glow",
+      "background": "divine luxury realm",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

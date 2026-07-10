@@ -1,0 +1,73 @@
+{
+  "id": "bichon",
+  "name": "比熊",
+  "description": "白色卷毛，圆脸，看起来像棉花糖一样蓬松可爱",
+  "features": "round fluffy white fur, cotton-ball like appearance, black eyes, small black nose",
+  "theme": "云朵/棉花糖/天使",
+  "levels": [
+    {
+      "level": 1,
+      "name": "棉花糖宝宝",
+      "accessories": "粉色小蝴蝶结",
+      "elements": "small pink bow on head",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "云朵精灵",
+      "accessories": "云朵项圈+小铃铛",
+      "elements": "cloud-shaped collar with tiny bell",
+      "background": "light blue sky with small clouds",
+      "description": "云朵元素开始显现"
+    },
+    {
+      "level": 3,
+      "name": "天使学徒",
+      "accessories": "小光环+迷你翅膀",
+      "elements": "small golden halo above head, tiny white wings",
+      "background": "soft golden light rays",
+      "description": "天使特征初现"
+    },
+    {
+      "level": 4,
+      "name": "云朵贵族",
+      "accessories": "云朵皇冠+珍珠项链",
+      "elements": "crown made of fluffy clouds, pearl necklace",
+      "background": "golden clouds in blue sky",
+      "description": "贵族气质的云朵主题"
+    },
+    {
+      "level": 5,
+      "name": "小天使",
+      "accessories": "天使光环+中等翅膀+云朵披风",
+      "elements": "golden halo, medium white wings, cloud-patterned cape",
+      "background": "heavenly clouds with golden light",
+      "description": "正式成为小天使"
+    },
+    {
+      "level": 6,
+      "name": "云朵守护者",
+      "accessories": "大翅膀+魔法云朵法杖",
+      "elements": "large fluffy wings, staff with cloud orb",
+      "background": "magical cloud kingdom",
+      "description": "获得守护力量"
+    },
+    {
+      "level": 7,
+      "name": "棉花糖天使长",
+      "accessories": "华丽光环+巨大翅膀+云朵王座",
+      "elements": "ornate golden halo, huge cloud-like wings, floating cloud throne",
+      "background": "celestial clouds with rainbow",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "棉花糖之神",
+      "accessories": "神圣皇冠+超大翅膀+漂浮+云朵符号+光芒",
+      "elements": "divine crown, massive angelic wings, floating pose, cloud symbols glowing, radiant light",
+      "background": "divine heavenly realm with rays of light",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

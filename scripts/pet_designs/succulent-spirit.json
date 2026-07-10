@@ -1,0 +1,73 @@
+{
+  "id": "succulent-spirit",
+  "name": "succulent spirit",
+  "description": "多肉精灵，植物精灵，可爱",
+  "features": "succulent plant features, round leaves, cute sprout, green colors",
+  "theme": "植物/多肉/绿色/自然",
+  "levels": [
+    {
+      "level": 1,
+      "name": "小多肉",
+      "accessories": "小花盆",
+      "elements": "small flower pot",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "绿叶精灵",
+      "accessories": "叶子项圈",
+      "elements": "leaf collar",
+      "background": "soft green gradient",
+      "description": "绿叶元素"
+    },
+    {
+      "level": 3,
+      "name": "自然小宝",
+      "accessories": "小光环+花朵",
+      "elements": "small halo, flower decorations",
+      "background": "garden",
+      "description": "自然主题"
+    },
+    {
+      "level": 4,
+      "name": "植物贵族",
+      "accessories": "花冠+叶子披风",
+      "elements": "flower crown, leaf cape",
+      "background": "beautiful garden",
+      "description": "贵族气质"
+    },
+    {
+      "level": 5,
+      "name": "自然王子",
+      "accessories": "华丽花冠+披风",
+      "elements": "ornate flower crown, flowing cape",
+      "background": "golden garden",
+      "description": "王子气质"
+    },
+    {
+      "level": 6,
+      "name": "自然天使",
+      "accessories": "光环+叶翼",
+      "elements": "halo, leaf wings",
+      "background": "celestial garden",
+      "description": "自然天使"
+    },
+    {
+      "level": 7,
+      "name": "自然守护者",
+      "accessories": "华丽花冠+大翅膀+绿光",
+      "elements": "ornate crown, large wings, green glow",
+      "background": "sacred garden",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "自然之神",
+      "accessories": "神圣花冠+巨大翅膀+漂浮+植物符号",
+      "elements": "divine crown, massive wings, floating, plant symbols glowing",
+      "background": "divine garden realm",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

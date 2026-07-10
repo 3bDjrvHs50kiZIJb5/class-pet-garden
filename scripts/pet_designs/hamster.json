@@ -1,0 +1,73 @@
+{
+  "id": "hamster",
+  "name": "hamster",
+  "description": "仓鼠，圆滚滚，小体型，可爱",
+  "features": "round chubby body, small size, short legs, cheek pouches",
+  "theme": "瓜子/圆润/可爱/小圆球",
+  "levels": [
+    {
+      "level": 1,
+      "name": "小仓鼠",
+      "accessories": "蓝色小围巾",
+      "elements": "small blue scarf",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "瓜子精灵",
+      "accessories": "瓜子项圈",
+      "elements": "sunflower seed collar",
+      "background": "soft yellow gradient",
+      "description": "瓜子元素"
+    },
+    {
+      "level": 3,
+      "name": "圆滚滚",
+      "accessories": "小光环+储存袋",
+      "elements": "small halo, cheek pouches full",
+      "background": "golden light",
+      "description": "圆润主题"
+    },
+    {
+      "level": 4,
+      "name": "仓鼠贵族",
+      "accessories": "金色皇冠+瓜子披风",
+      "elements": "golden crown, seed-patterned cape",
+      "background": "golden seeds background",
+      "description": "贵族气质"
+    },
+    {
+      "level": 5,
+      "name": "瓜子王子",
+      "accessories": "瓜子皇冠+金色披风",
+      "elements": "seed crown, golden cape",
+      "background": "golden glow",
+      "description": "王子气质"
+    },
+    {
+      "level": 6,
+      "name": "圆润天使",
+      "accessories": "光环+小翅膀+瓜子",
+      "elements": "halo, small wings, holding seeds",
+      "background": "celestial golden",
+      "description": "圆润天使"
+    },
+    {
+      "level": 7,
+      "name": "瓜子守护者",
+      "accessories": "华丽皇冠+大翅膀+瓜子光芒",
+      "elements": "ornate crown, large wings, seed glow",
+      "background": "sacred golden realm",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "圆润之神",
+      "accessories": "神圣皇冠+巨大翅膀+漂浮+瓜子符号",
+      "elements": "divine crown, massive wings, floating, seed symbols glowing",
+      "background": "divine golden realm",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

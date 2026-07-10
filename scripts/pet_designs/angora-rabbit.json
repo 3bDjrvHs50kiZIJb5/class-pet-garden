@@ -1,0 +1,73 @@
+{
+  "id": "angora-rabbit",
+  "name": "angora rabbit",
+  "description": "安哥拉兔，长毛，蓬松，优雅",
+  "features": "long fluffy fur, elegant posture, soft appearance, gentle eyes",
+  "theme": "优雅/丝绸/云朵/白色",
+  "levels": [
+    {
+      "level": 1,
+      "name": "小安哥拉",
+      "accessories": "粉色丝带",
+      "elements": "pink satin ribbon",
+      "background": "soft white gradient",
+      "description": "简单优雅的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "丝绸精灵",
+      "accessories": "丝绸项圈",
+      "elements": "silk collar with pearl",
+      "background": "soft pink gradient",
+      "description": "丝绸元素"
+    },
+    {
+      "level": 3,
+      "name": "云朵小兔",
+      "accessories": "云朵装饰+小光环",
+      "elements": "cloud decorations, small halo",
+      "background": "cloudy sky",
+      "description": "云朵主题"
+    },
+    {
+      "level": 4,
+      "name": "丝绸贵族",
+      "accessories": "丝绸皇冠+珍珠项链",
+      "elements": "silk crown, pearl necklace",
+      "background": "elegant silk background",
+      "description": "贵族气质"
+    },
+    {
+      "level": 5,
+      "name": "云朵王子",
+      "accessories": "云朵皇冠+丝绸披风",
+      "elements": "cloud crown, silk cape",
+      "background": "golden clouds",
+      "description": "王子气质"
+    },
+    {
+      "level": 6,
+      "name": "丝绸天使",
+      "accessories": "丝绸光环+翅膀",
+      "elements": "silk halo, elegant wings",
+      "background": "celestial silk",
+      "description": "丝绸天使"
+    },
+    {
+      "level": 7,
+      "name": "云朵守护者",
+      "accessories": "华丽皇冠+大翅膀+丝绸光芒",
+      "elements": "ornate crown, large wings, silk glow",
+      "background": "sacred clouds",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "丝绸之神",
+      "accessories": "神圣皇冠+巨大翅膀+漂浮+丝绸符号",
+      "elements": "divine crown, massive wings, floating, silk symbols glowing",
+      "background": "divine silk realm",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

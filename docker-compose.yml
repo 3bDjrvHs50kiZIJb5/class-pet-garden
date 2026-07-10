@@ -1,0 +1,46 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: class-pet-garden-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-classpets}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-classpets}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_ROOT_PASSWORD:-classpets}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  app:
+    image: class-pet-garden:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: class-pet-garden-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3002}:3002"
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-classpets}
+      DB_NAME: ${MYSQL_DATABASE:-classpets}
+      DB_CONNECTION_LIMIT: ${DB_CONNECTION_LIMIT:-10}
+      TZ: Asia/Shanghai
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mysql_data:

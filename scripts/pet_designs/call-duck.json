@@ -1,0 +1,73 @@
+{
+  "id": "call-duck",
+  "name": "call duck",
+  "description": "柯尔鸭，圆润，黄白羽毛，可爱",
+  "features": "round body, yellow and white feathers, orange beak, cute waddle",
+  "theme": "水/可爱/圆润/小黄鸭",
+  "levels": [
+    {
+      "level": 1,
+      "name": "小柯尔鸭",
+      "accessories": "红色小领结",
+      "elements": "small red bow tie",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "水花精灵",
+      "accessories": "水滴项圈",
+      "elements": "water drop collar",
+      "background": "soft blue gradient",
+      "description": "水元素"
+    },
+    {
+      "level": 3,
+      "name": "圆润小鸭",
+      "accessories": "小光环+水花",
+      "elements": "small halo, water splash",
+      "background": "pond with lily pads",
+      "description": "圆润主题"
+    },
+    {
+      "level": 4,
+      "name": "水边贵族",
+      "accessories": "金色皇冠+水滴披风",
+      "elements": "golden crown, water drop cape",
+      "background": "elegant pond",
+      "description": "贵族气质"
+    },
+    {
+      "level": 5,
+      "name": "水花王子",
+      "accessories": "水滴皇冠+金色披风",
+      "elements": "water drop crown, golden cape",
+      "background": "golden pond",
+      "description": "王子气质"
+    },
+    {
+      "level": 6,
+      "name": "水花天使",
+      "accessories": "水光环+翅膀",
+      "elements": "water halo, water wings",
+      "background": "celestial water",
+      "description": "水花天使"
+    },
+    {
+      "level": 7,
+      "name": "水域守护者",
+      "accessories": "华丽皇冠+大翅膀+水花光芒",
+      "elements": "ornate crown, large wings, water glow",
+      "background": "sacred lake",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "水域之神",
+      "accessories": "神圣皇冠+巨大翅膀+漂浮+水滴符号",
+      "elements": "divine crown, massive wings, floating, water symbols glowing",
+      "background": "divine water realm",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

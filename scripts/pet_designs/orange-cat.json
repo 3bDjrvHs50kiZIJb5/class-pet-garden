@@ -1,0 +1,73 @@
+{
+  "id": "orange-cat",
+  "name": "orange tabby cat",
+  "description": "橘猫，橘色毛发，圆润可爱，性格温顺",
+  "features": "orange tabby fur, round face, chubby body, amber eyes, striped pattern",
+  "theme": "橘子/温暖/可爱/小太阳",
+  "levels": [
+    {
+      "level": 1,
+      "name": "小橘猫",
+      "accessories": "红色小铃铛",
+      "elements": "small red bell on collar",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "橘子精灵",
+      "accessories": "橘子项圈",
+      "elements": "orange fruit-shaped collar",
+      "background": "orange orchard",
+      "description": "橘子元素"
+    },
+    {
+      "level": 3,
+      "name": "温暖小球",
+      "accessories": "太阳徽章+小光环",
+      "elements": "sun badge, small golden halo",
+      "background": "warm sunlight",
+      "description": "小太阳形象"
+    },
+    {
+      "level": 4,
+      "name": "橘子贵族",
+      "accessories": "金色橘子皇冠+披风",
+      "elements": "golden orange crown, orange-patterned cape",
+      "background": "golden sunset",
+      "description": "贵族气质"
+    },
+    {
+      "level": 5,
+      "name": "太阳王子",
+      "accessories": "太阳皇冠+光芒披风",
+      "elements": "sun crown, cape with sun rays",
+      "background": "golden sun realm",
+      "description": "太阳王子"
+    },
+    {
+      "level": 6,
+      "name": "小太阳神",
+      "accessories": "太阳光环+翅膀",
+      "elements": "sun halo, golden wings",
+      "background": "celestial sun",
+      "description": "太阳天使"
+    },
+    {
+      "level": 7,
+      "name": "太阳守护者",
+      "accessories": "华丽太阳皇冠+大翅膀+光芒",
+      "elements": "ornate sun crown, large golden wings, radiant light",
+      "background": "sacred sun temple",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "太阳之神",
+      "accessories": "神圣太阳皇冠+巨大翅膀+漂浮+太阳光芒",
+      "elements": "divine sun crown, massive golden wings, floating, sun symbols glowing",
+      "background": "divine solar realm with sun",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

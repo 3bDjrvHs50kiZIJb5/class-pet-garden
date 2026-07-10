@@ -1,0 +1,73 @@
+{
+  "id": "ragdoll-cat",
+  "name": "ragdoll cat",
+  "description": "布偶猫，蓝眼，长毛，优雅温顺",
+  "features": "long silky fur, bright blue eyes, color-point pattern, fluffy tail",
+  "theme": "优雅/蓝宝石/贵族/天使",
+  "levels": [
+    {
+      "level": 1,
+      "name": "蓝眼小布偶",
+      "accessories": "蓝色丝带",
+      "elements": "blue satin ribbon around neck",
+      "background": "soft white gradient",
+      "description": "简单优雅的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "蓝宝石精灵",
+      "accessories": "蓝宝石项圈",
+      "elements": "sapphire gem collar with silver chain",
+      "background": "soft blue gradient",
+      "description": "蓝宝石元素"
+    },
+    {
+      "level": 3,
+      "name": "优雅贵族",
+      "accessories": "珍珠项链+蕾丝",
+      "elements": "pearl necklace with lace trim",
+      "background": "elegant velvet background",
+      "description": "优雅气质"
+    },
+    {
+      "level": 4,
+      "name": "蓝瞳公主",
+      "accessories": "蓝宝石皇冠+蕾丝披风",
+      "elements": "sapphire crown, lace cape",
+      "background": "royal blue chamber",
+      "description": "公主形象"
+    },
+    {
+      "level": 5,
+      "name": "布偶女王",
+      "accessories": "华丽蓝宝石皇冠+丝绒披风",
+      "elements": "ornate sapphire crown, velvet cape with fur trim",
+      "background": "royal throne room",
+      "description": "女王气质"
+    },
+    {
+      "level": 6,
+      "name": "蓝宝石天使",
+      "accessories": "蓝宝石光环+优雅翅膀",
+      "elements": "sapphire blue halo, elegant white wings",
+      "background": "celestial blue clouds",
+      "description": "优雅天使形象"
+    },
+    {
+      "level": 7,
+      "name": "优雅守护者",
+      "accessories": "华丽蓝宝石皇冠+大翅膀+光芒",
+      "elements": "ornate sapphire crown, large elegant wings, blue light rays",
+      "background": "sacred blue temple",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "优雅之神",
+      "accessories": "神圣蓝宝石皇冠+巨大翅膀+漂浮+蓝宝石符号",
+      "elements": "divine sapphire crown, massive elegant wings, floating, sapphire symbols glowing",
+      "background": "divine blue realm with crystals",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "id": "alpaca",
+  "name": "alpaca",
+  "description": "羊驼，长颈，卷毛，呆萌",
+  "features": "long neck, fluffy curly fur, big eyes, gentle expression",
+  "theme": "彩虹/呆萌/草原/棉花糖",
+  "levels": [
+    {
+      "level": 1,
+      "name": "小羊驼",
+      "accessories": "彩色小围巾",
+      "elements": "colorful small scarf",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "彩虹精灵",
+      "accessories": "彩虹项圈",
+      "elements": "rainbow-colored collar",
+      "background": "soft rainbow gradient",
+      "description": "彩虹元素"
+    },
+    {
+      "level": 3,
+      "name": "呆萌小驼",
+      "accessories": "小光环+彩虹球",
+      "elements": "small halo, rainbow ball",
+      "background": "grassland with flowers",
+      "description": "呆萌主题"
+    },
+    {
+      "level": 4,
+      "name": "草原贵族",
+      "accessories": "彩虹皇冠+花朵披风",
+      "elements": "rainbow crown, flower cape",
+      "background": "beautiful grassland",
+      "description": "贵族气质"
+    },
+    {
+      "level": 5,
+      "name": "彩虹王子",
+      "accessories": "华丽彩虹皇冠+披风",
+      "elements": "ornate rainbow crown, rainbow cape",
+      "background": "rainbow sky",
+      "description": "王子气质"
+    },
+    {
+      "level": 6,
+      "name": "彩虹天使",
+      "accessories": "彩虹光环+翅膀",
+      "elements": "rainbow halo, rainbow wings",
+      "background": "celestial rainbow",
+      "description": "彩虹天使"
+    },
+    {
+      "level": 7,
+      "name": "草原守护者",
+      "accessories": "华丽皇冠+大彩虹翅膀+光芒",
+      "elements": "ornate crown, large rainbow wings, radiant light",
+      "background": "sacred grassland",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "彩虹之神",
+      "accessories": "神圣彩虹皇冠+巨大翅膀+漂浮+彩虹符号",
+      "elements": "divine rainbow crown, massive wings, floating, rainbow symbols glowing",
+      "background": "divine rainbow realm",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

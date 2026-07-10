@@ -1,0 +1,73 @@
+{
+  "id": "winter-hamster",
+  "name": "winter white hamster",
+  "description": "银狐仓鼠，银白毛发，冬季主题",
+  "features": "silver white fur, round body, dark eyes, fluffy appearance",
+  "theme": "冰雪/冬季/银色/雪花",
+  "levels": [
+    {
+      "level": 1,
+      "name": "小银狐",
+      "accessories": "蓝色小围巾",
+      "elements": "small blue scarf",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "雪花精灵",
+      "accessories": "雪花项圈",
+      "elements": "snowflake collar",
+      "background": "soft blue gradient",
+      "description": "雪花元素"
+    },
+    {
+      "level": 3,
+      "name": "冰雪小球",
+      "accessories": "冰晶装饰+小光环",
+      "elements": "ice crystal decorations, small halo",
+      "background": "snowy landscape",
+      "description": "冰雪主题"
+    },
+    {
+      "level": 4,
+      "name": "银色贵族",
+      "accessories": "银色皇冠+雪花披风",
+      "elements": "silver crown, snowflake cape",
+      "background": "icy palace",
+      "description": "贵族气质"
+    },
+    {
+      "level": 5,
+      "name": "雪花王子",
+      "accessories": "雪花皇冠+银色披风",
+      "elements": "snowflake crown, silver cape",
+      "background": "frozen kingdom",
+      "description": "王子气质"
+    },
+    {
+      "level": 6,
+      "name": "冰雪天使",
+      "accessories": "冰晶光环+翅膀",
+      "elements": "ice halo, crystal wings",
+      "background": "celestial ice",
+      "description": "冰雪天使"
+    },
+    {
+      "level": 7,
+      "name": "冰雪守护者",
+      "accessories": "华丽皇冠+大翅膀+冰晶光芒",
+      "elements": "ornate crown, large wings, ice glow",
+      "background": "sacred ice temple",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "冰雪之神",
+      "accessories": "神圣皇冠+巨大翅膀+漂浮+雪花符号",
+      "elements": "divine crown, massive wings, floating, snowflake symbols glowing",
+      "background": "divine ice realm",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

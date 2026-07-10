@@ -1,0 +1,73 @@
+{
+  "id": "corgi",
+  "name": "pembroke welsh corgi",
+  "description": "柯基，短腿，大耳朵，橙白毛发，英国女王最爱",
+  "features": "short legs, big ears, orange and white fur, fluffy butt, happy expression",
+  "theme": "皇室/英国/可爱/小国王",
+  "levels": [
+    {
+      "level": 1,
+      "name": "短腿小柯基",
+      "accessories": "红色小领结",
+      "elements": "small red bow tie",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "英国小绅士",
+      "accessories": "英国国旗项圈",
+      "elements": "Union Jack pattern collar",
+      "background": "London landmarks",
+      "description": "英国品种特色"
+    },
+    {
+      "level": 3,
+      "name": "皇室小成员",
+      "accessories": "小皇冠+短腿印记",
+      "elements": "small golden crown, paw print badge",
+      "background": "Buckingham Palace",
+      "description": "皇室关联"
+    },
+    {
+      "level": 4,
+      "name": "柯基贵族",
+      "accessories": "华丽项圈+宝石+披风",
+      "elements": "ornate collar with jewels, small cape",
+      "background": "royal garden",
+      "description": "贵族气质"
+    },
+    {
+      "level": 5,
+      "name": "小国王",
+      "accessories": "小王冠+皇家披风+权杖",
+      "elements": "small crown, royal cape, tiny scepter",
+      "background": "throne room",
+      "description": "小国王形象"
+    },
+    {
+      "level": 6,
+      "name": "皇家天使",
+      "accessories": "皇冠+翅膀+光环",
+      "elements": "golden crown, white wings, halo",
+      "background": "celestial palace",
+      "description": "皇家天使"
+    },
+    {
+      "level": 7,
+      "name": "皇室大天使",
+      "accessories": "华丽皇冠+大翅膀+皇家光环",
+      "elements": "ornate crown, large wings, royal halo",
+      "background": "sacred royal realm",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "柯基之神",
+      "accessories": "神圣皇冠+超大翅膀+漂浮+英国符号+光芒",
+      "elements": "divine crown, massive wings, floating, Union Jack symbols, radiant light",
+      "background": "divine British realm",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "id": "vermilion-bird",
+  "name": "vermilion bird",
+  "description": "朱雀，火鸟，红色羽毛，炽热",
+  "features": "phoenix-like bird, red and orange feathers, fiery appearance, majestic wings",
+  "theme": "火/红色/炽热/凤凰",
+  "levels": [
+    {
+      "level": 1,
+      "name": "小火鸟",
+      "accessories": "金色小铃铛",
+      "elements": "small golden bell",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "火焰精灵",
+      "accessories": "火焰项圈",
+      "elements": "flame collar",
+      "background": "soft orange gradient",
+      "description": "火焰元素"
+    },
+    {
+      "level": 3,
+      "name": "炽热小鸟",
+      "accessories": "小火焰+光环",
+      "elements": "small flames, halo",
+      "background": "fiery sky",
+      "description": "炽热主题"
+    },
+    {
+      "level": 4,
+      "name": "火鸟贵族",
+      "accessories": "金色皇冠+火焰披风",
+      "elements": "golden crown, flame cape",
+      "background": "volcanic palace",
+      "description": "贵族气质"
+    },
+    {
+      "level": 5,
+      "name": "火焰王子",
+      "accessories": "华丽火焰皇冠+披风",
+      "elements": "ornate flame crown, flowing cape",
+      "background": "golden flames",
+      "description": "王子气质"
+    },
+    {
+      "level": 6,
+      "name": "火焰天使",
+      "accessories": "火焰光环+火翼",
+      "elements": "flame halo, fire wings",
+      "background": "celestial fire",
+      "description": "火焰天使"
+    },
+    {
+      "level": 7,
+      "name": "南方守护者",
+      "accessories": "华丽皇冠+大火翼+火光",
+      "elements": "ornate crown, large fire wings, flame glow",
+      "background": "sacred fire temple",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "朱雀之神",
+      "accessories": "神圣皇冠+巨大火翼+漂浮+火焰符号",
+      "elements": "divine crown, massive fire wings, floating, flame symbols glowing",
+      "background": "divine fire realm",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

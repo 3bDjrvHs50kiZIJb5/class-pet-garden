@@ -1,0 +1,73 @@
+{
+  "id": "unicorn",
+  "name": "unicorn",
+  "description": "独角兽，独角，马身，纯洁神圣",
+  "features": "white horse body, spiral horn, flowing mane, pure appearance",
+  "theme": "纯洁/神圣/彩虹/魔法",
+  "levels": [
+    {
+      "level": 1,
+      "name": "小独角兽",
+      "accessories": "粉色小花",
+      "elements": "small pink flower on horn",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "彩虹精灵",
+      "accessories": "彩虹项圈",
+      "elements": "rainbow collar",
+      "background": "soft rainbow gradient",
+      "description": "彩虹元素"
+    },
+    {
+      "level": 3,
+      "name": "魔法小马",
+      "accessories": "小光环+星星",
+      "elements": "small halo, star decorations",
+      "background": "magical meadow",
+      "description": "魔法主题"
+    },
+    {
+      "level": 4,
+      "name": "纯洁贵族",
+      "accessories": "珍珠皇冠+彩虹披风",
+      "elements": "pearl crown, rainbow cape",
+      "background": "crystal palace",
+      "description": "贵族气质"
+    },
+    {
+      "level": 5,
+      "name": "彩虹王子",
+      "accessories": "华丽彩虹皇冠+披风",
+      "elements": "ornate rainbow crown, flowing cape",
+      "background": "rainbow palace",
+      "description": "王子气质"
+    },
+    {
+      "level": 6,
+      "name": "纯洁天使",
+      "accessories": "光环+翅膀+独角光芒",
+      "elements": "halo, white wings, glowing horn",
+      "background": "celestial rainbow",
+      "description": "纯洁天使"
+    },
+    {
+      "level": 7,
+      "name": "魔法守护者",
+      "accessories": "华丽皇冠+大翅膀+魔法光芒",
+      "elements": "ornate crown, large wings, magic glow",
+      "background": "sacred rainbow temple",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "纯洁之神",
+      "accessories": "神圣皇冠+巨大翅膀+漂浮+彩虹符号",
+      "elements": "divine crown, massive wings, floating, rainbow symbols glowing",
+      "background": "divine rainbow realm",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

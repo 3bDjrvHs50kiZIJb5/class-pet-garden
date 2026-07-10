@@ -1,0 +1,73 @@
+{
+  "id": "golden-retriever",
+  "name": "golden retriever",
+  "description": "金色长毛，温顺友好，被称为阳光大暖男",
+  "features": "long golden fur, friendly gentle expression, floppy ears, warm brown eyes, big smile",
+  "theme": "阳光/温暖/天使",
+  "levels": [
+    {
+      "level": 1,
+      "name": "阳光小金毛",
+      "accessories": "红色小领结",
+      "elements": "small red bow tie on neck",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "温暖守护者",
+      "accessories": "金色铃铛项圈",
+      "elements": "golden bell collar with small tag",
+      "background": "warm golden light",
+      "description": "金色元素呼应毛发"
+    },
+    {
+      "level": 3,
+      "name": "向日葵使者",
+      "accessories": "向日葵花环",
+      "elements": "sunflower wreath around neck",
+      "background": "sunflower field",
+      "description": "阳光温暖形象"
+    },
+    {
+      "level": 4,
+      "name": "导盲小英雄",
+      "accessories": "导盲犬背心+金色徽章",
+      "elements": "yellow service dog vest with golden badge",
+      "background": "golden sunset",
+      "description": "工作犬身份象征"
+    },
+    {
+      "level": 5,
+      "name": "阳光王子",
+      "accessories": "金色小皇冠+向日葵披风",
+      "elements": "small golden crown, sunflower-patterned cape",
+      "background": "golden rays of sunshine",
+      "description": "温柔王者气质"
+    },
+    {
+      "level": 6,
+      "name": "金色天使",
+      "accessories": "金色光环+阳光翅膀",
+      "elements": "golden halo, golden-yellow angel wings",
+      "background": "heavenly golden clouds",
+      "description": "阳光天使形象"
+    },
+    {
+      "level": 7,
+      "name": "太阳守护者",
+      "accessories": "华丽太阳皇冠+大翅膀+光芒",
+      "elements": "ornate sun crown, large golden wings, radiant light",
+      "background": "celestial sun realm",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "太阳神犬",
+      "accessories": "神圣太阳皇冠+巨大翅膀+漂浮+太阳光芒",
+      "elements": "divine sun crown, massive golden wings, floating, sun symbols glowing",
+      "background": "divine solar realm with rays",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "id": "azure-dragon",
+  "name": "azure dragon",
+  "description": "青龙，东方龙形，青色，威严",
+  "features": "eastern dragon form, azure blue scales, long body, majestic presence",
+  "theme": "东方/青龙/水/威严",
+  "levels": [
+    {
+      "level": 1,
+      "name": "小龙宝宝",
+      "accessories": "青色小铃铛",
+      "elements": "small azure bell",
+      "background": "soft white gradient",
+      "description": "简单可爱的入门装饰"
+    },
+    {
+      "level": 2,
+      "name": "水精灵",
+      "accessories": "水滴项圈",
+      "elements": "water drop collar",
+      "background": "soft blue gradient",
+      "description": "水元素"
+    },
+    {
+      "level": 3,
+      "name": "青云小龙",
+      "accessories": "云纹装饰+小光环",
+      "elements": "cloud patterns, small halo",
+      "background": "blue clouds",
+      "description": "青云主题"
+    },
+    {
+      "level": 4,
+      "name": "龙族贵族",
+      "accessories": "青色皇冠+龙鳞披风",
+      "elements": "azure crown, dragon scale cape",
+      "background": "azure palace",
+      "description": "贵族气质"
+    },
+    {
+      "level": 5,
+      "name": "青龙王子",
+      "accessories": "华丽龙冠+披风",
+      "elements": "ornate dragon crown, flowing cape",
+      "background": "golden clouds",
+      "description": "王子气质"
+    },
+    {
+      "level": 6,
+      "name": "水天使",
+      "accessories": "水光环+龙翼",
+      "elements": "water halo, dragon wings",
+      "background": "celestial water",
+      "description": "水天使"
+    },
+    {
+      "level": 7,
+      "name": "东方守护者",
+      "accessories": "华丽龙冠+大翅膀+水光",
+      "elements": "ornate crown, large wings, water glow",
+      "background": "sacred eastern temple",
+      "description": "接近完全神圣化"
+    },
+    {
+      "level": 8,
+      "name": "青龙之神",
+      "accessories": "神圣龙冠+巨大龙翼+漂浮+水符号",
+      "elements": "divine crown, massive dragon wings, floating, water symbols glowing",
+      "background": "divine eastern realm",
+      "description": "完全神圣化的终极形态"
+    }
+  ]
+}
