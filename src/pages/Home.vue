@@ -6,6 +6,7 @@ import PetImage from '@/components/PetImage.vue'
 import AppShell from '@/components/AppShell.vue'
 import GrowthAreaChart from '@/components/GrowthAreaChart.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import BgmTrackPicker from '@/components/BgmTrackPicker.vue'
 import RankListRow from '@/components/ranking/RankListRow.vue'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
@@ -14,7 +15,10 @@ import { useStudentImport, STUDENTS_IMPORTED_EVENT, setCurrentClassStudentCount 
 import { getSavedClassId, saveCurrentClassId, useClassVip } from '@/composables/useClassVip'
 import { sortRanking } from '@/utils/ranking'
 import { BADGE_CLASS } from '@/utils/badge'
+import { useBgm } from '@/composables/useBgm'
 import type { TeacherProfile } from '@/types'
+
+const { autoPlayEnabled: bgmAutoPlay, setAutoPlay: setBgmAutoPlay } = useBgm()
 
 const { openImportModal } = useStudentImport()
 const { currentClassVipActive, refreshClassVipStatus } = useClassVip()
@@ -103,6 +107,16 @@ const isRefreshing = ref(false)
 const showLanding = ref(true)
 const isDemoMode = ref(false)
 const DEMO_CLASS_ID = 'demo-class-2026'
+
+const LANDING_HEADLINES = [
+  '孩子的专属宠物，言行驱动成长。',
+  '老师轻点评分，学生宠物同步成长。',
+  '一声表扬，一只宠物，一份看得见的成长。',
+] as const
+
+const landingHeadline = ref(
+  LANDING_HEADLINES[Math.floor(Math.random() * LANDING_HEADLINES.length)]!,
+)
 
 interface ActiveTaskSummary {
   id: string
@@ -1433,7 +1447,7 @@ onUnmounted(() => {
               <span class="h-2 w-2 rounded-full bg-[#ff5c00]"></span>
               <span class="font-brand text-sm font-bold text-[#ff5c00]">班级宠物园</span>
             </div>
-            <h1 class="mt-[22px] max-w-[820px] font-serif text-5xl font-bold leading-[0.98] text-[#1a1a1a] sm:text-[68px]">孩子的专属宠物，言行驱动成长。</h1>
+            <h1 class="mt-[22px] max-w-[820px] font-serif text-5xl font-bold leading-[0.98] text-[#1a1a1a] sm:text-[68px]">{{ landingHeadline }}</h1>
             <p class="mt-[22px] max-w-[660px] text-base leading-[1.45] text-[#666] sm:text-xl">老师快速加分，学生的宠物随习惯一起升级。</p>
             <div class="mt-[22px] flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <button type="button" class="font-brand h-12 rounded-full bg-[#ff5c00] px-8 text-[15px] font-bold text-white shadow-[0_16px_40px_rgba(0,0,0,0.07)] transition hover:bg-[#e95300]" @click="enterDemoGarden">进入演示班级</button>
@@ -1447,18 +1461,18 @@ onUnmounted(() => {
               </div>
               <div class="min-w-0">
                 <p class="font-brand text-sm font-bold text-[#1a1a1a]">评价一次，成长一点</p>
-                <p class="mt-1 text-sm leading-5 leading-5 text-[#888]">积分、等级、徽章都围绕学生的日常表现。</p>
+                <p class="mt-1 text-sm leading-5 text-[#888]">积分、等级、徽章都围绕学生的日常表现。</p>
               </div>
             </div>
           </div>
         </section>
 
-        <section class="flex flex-col items-center justify-center gap-[18px] px-5 py-10 sm:h-[700px] sm:px-8">
+        <section class="flex flex-col items-center justify-center gap-[18px] px-5 py-10 sm:h-[700px] sm:px-8 lg:h-auto lg:min-h-[820px] lg:gap-6 lg:py-14">
           <div class="text-center">
             <p class="font-brand text-sm leading-5 font-semibold text-[#ff5c00]">产品截图</p>
             <h2 class="mt-4 font-serif text-3xl font-bold leading-[1.05] text-[#1a1a1a] sm:text-[34px]">把喂养、成长与班级记录放在同一屏。</h2>
           </div>
-          <div class="flex w-full max-w-[1040px] items-center justify-center rounded-xl border border-[#f3f4f6] bg-white p-3 shadow-[0_16px_40px_rgba(0,0,0,0.07)] sm:h-[590px] sm:p-4">
+          <div class="flex w-full max-w-[1040px] items-center justify-center rounded-xl border border-[#f3f4f6] bg-white p-3 shadow-[0_16px_40px_rgba(0,0,0,0.07)] sm:h-[590px] sm:p-4 lg:max-w-[1180px] lg:h-[660px] lg:p-5 xl:max-w-[1280px] xl:h-[720px]">
             <img src="/class-pet-garden-product.png" alt="班级宠物园产品截图" class="w-full rounded-lg sm:h-full sm:object-contain" />
           </div>
         </section>
@@ -1546,9 +1560,7 @@ onUnmounted(() => {
               <router-link to="/rules" aria-label="新增规则" class="inline-flex h-[42px] w-[42px] items-center justify-center rounded-xl bg-[#8b5cf6] text-sm font-semibold text-white shadow-sm lg:w-auto lg:gap-1.5 lg:px-[13px]" :class="stampDimClass"><span class="material-symbols-rounded text-[18px] leading-none">add</span><span class="hidden lg:inline">新增规则</span></router-link>
             </div>
             <div class="ml-auto flex items-center gap-2" :class="stampDimClass">
-              <button type="button" class="flex h-[42px] w-[42px] items-center justify-center rounded-xl border border-[#edeff2] bg-white text-[#666] shadow-sm" aria-label="通知">
-                <span class="material-symbols-rounded text-[20px]">notifications</span>
-              </button>
+              <BgmTrackPicker />
               <router-link
                 v-if="isGuest"
                 to="/login"
@@ -1913,7 +1925,16 @@ onUnmounted(() => {
               <p v-else class="mt-3 rounded-xl bg-[#fff8f2] px-4 py-6 text-center text-sm text-[#9a735d]">还没有创建班级</p>
             </div>
 
-            <div class="mt-6 flex justify-end gap-2 border-t border-[#f3f0ec] pt-4">
+            <div class="mt-6 flex items-center justify-end gap-2 border-t border-[#f3f0ec] pt-4">
+              <label class="mr-auto inline-flex cursor-pointer items-center gap-2 text-sm text-[#795f50]" data-testid="bgm-auto-play-toggle">
+                <input
+                  type="checkbox"
+                  class="h-4 w-4 rounded border-[#e8ddd2] text-orange-500 focus:ring-orange-300"
+                  :checked="bgmAutoPlay"
+                  @change="setBgmAutoPlay(($event.target as HTMLInputElement).checked)"
+                />
+                <span>默认播放背景音乐</span>
+              </label>
               <button type="button" class="px-4 py-2 text-sm" @click="closeTeacherProfile">关闭</button>
               <button type="button" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-600" @click="handleTeacherLogout">退出登录</button>
             </div>

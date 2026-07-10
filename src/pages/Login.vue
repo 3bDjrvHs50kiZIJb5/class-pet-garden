@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAuth } from '@/composables/useAuth'
+import { useAuth, ADMIN_USERNAME } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import { isValidPhone } from '@/utils/phone'
 
@@ -28,7 +28,8 @@ async function handleSubmit() {
     error.value = '请输入手机号和密码'
     return
   }
-  if (!isValidPhone(phone.value)) {
+  const username = phone.value.trim()
+  if (username.toLowerCase() !== ADMIN_USERNAME && !isValidPhone(username)) {
     error.value = '请输入正确的手机号'
     return
   }
@@ -36,7 +37,7 @@ async function handleSubmit() {
   loading.value = true
   try {
     const res = await api.post('/auth/login', {
-      username: phone.value.trim(),
+      username,
       password: password.value
     })
     if (res.data.success) {
@@ -105,12 +106,11 @@ function guestContinue() {
                 <span class="material-symbols-rounded text-[18px] text-[#999]">call</span>
                 <input
                   v-model="phone"
-                  type="tel"
-                  maxlength="11"
-                  inputmode="numeric"
+                  type="text"
+                  maxlength="20"
                   class="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[#b9a697]"
                   placeholder="请输入手机号"
-                  autocomplete="tel"
+                  autocomplete="username"
                 />
               </label>
             </div>
