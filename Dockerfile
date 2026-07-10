@@ -10,7 +10,7 @@ COPY index.html vite.config.ts tsconfig.json tsconfig.node.json tailwind.config.
 COPY src ./src
 COPY public ./public
 
-RUN npm run build
+RUN npx vite build
 
 # 生产运行镜像
 FROM node:20-alpine AS production
