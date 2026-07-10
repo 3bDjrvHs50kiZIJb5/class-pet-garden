@@ -9,6 +9,7 @@ import { STUDENTS_IMPORTED_EVENT } from '@/composables/useStudentImport'
 import { getCurrentClassStorageKey as buildCurrentClassStorageKey, saveCurrentClassId } from '@/composables/useClassVip'
 import type { Class, ClassTask, ClassTaskDetail, Rule, Student, TaskStudentItem } from '@/types'
 import { BADGE_CLASS } from '@/utils/badge'
+import { fromDatetimeLocalValue, getDefaultEndOfTodayLocal, toDatetimeLocalValue } from '@/utils/datetime'
 
 const DEMO_CLASS_ID = 'demo-class-2026'
 
@@ -238,9 +239,7 @@ function openCreateModal() {
   formTitle.value = ''
   formDescription.value = ''
   formRuleId.value = rules.value.find(r => r.points > 0)?.id || ''
-  const today = new Date()
-  today.setHours(23, 59, 0, 0)
-  formDeadline.value = today.toISOString().slice(0, 16)
+  formDeadline.value = getDefaultEndOfTodayLocal()
   formTargetType.value = 'all'
   formTargetStudentIds.value = []
   showCreateModal.value = true
@@ -261,7 +260,7 @@ function fillMockTask() {
   const deadline = new Date()
   deadline.setDate(deadline.getDate() + template.deadlineDays)
   deadline.setHours(23, 59, 0, 0)
-  formDeadline.value = deadline.toISOString().slice(0, 16)
+  formDeadline.value = toDatetimeLocalValue(deadline.getTime())
 
   formTargetType.value = template.targetType
   if (template.targetType === 'selected' && students.value.length) {
@@ -280,7 +279,7 @@ function openEditModal(task: ClassTask) {
   formTitle.value = task.title
   formDescription.value = task.description || ''
   formRuleId.value = task.rule_id
-  formDeadline.value = task.deadline ? new Date(task.deadline).toISOString().slice(0, 16) : ''
+  formDeadline.value = task.deadline ? toDatetimeLocalValue(task.deadline) : ''
   formTargetType.value = task.target_type
   formTargetStudentIds.value = task.target_student_ids ? [...task.target_student_ids] : []
   showCreateModal.value = true
@@ -297,7 +296,7 @@ async function saveTask() {
   }
 
   saving.value = true
-  const deadline = formDeadline.value ? new Date(formDeadline.value).getTime() : null
+  const deadline = formDeadline.value ? fromDatetimeLocalValue(formDeadline.value) : null
   const payload = {
     classId: currentClass.value.id,
     title: formTitle.value.trim(),

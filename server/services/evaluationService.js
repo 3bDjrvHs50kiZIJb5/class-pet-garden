@@ -108,6 +108,7 @@ export async function revokeEvaluation(db, recordId) {
   await db.prepare('UPDATE students SET total_points = total_points - ?, pet_exp = ?, pet_level = ? WHERE id = ?')
     .run(record.points, newExp, newLevel, record.student_id)
 
+  await db.prepare('DELETE FROM task_completions WHERE evaluation_record_id = ?').run(recordId)
   await db.prepare('DELETE FROM evaluation_records WHERE id = ?').run(recordId)
 
   return record

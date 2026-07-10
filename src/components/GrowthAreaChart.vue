@@ -52,10 +52,18 @@ const areaPath = computed(() => {
   return `${linePath.value} L ${end.x} ${bottom} L ${start.x} ${bottom} Z`
 })
 
-const weekTotal = computed(() => props.values.reduce((sum, value) => sum + value, 0))
+// values 为周内累计曲线，本周总分应取最后一天累计值，而非对累计值再求和
+const weekTotal = computed(() => {
+  const values = props.values.length ? props.values : [0]
+  return values[values.length - 1]
+})
+
 const peakDay = computed(() => {
   if (!props.values.length) return props.labels[0]
-  const peakIndex = props.values.indexOf(Math.max(...props.values))
+  const dailyDeltas = props.values.map((value, index) => (
+    index === 0 ? value : value - props.values[index - 1]
+  ))
+  const peakIndex = dailyDeltas.indexOf(Math.max(...dailyDeltas))
   return props.labels[peakIndex] || props.labels[0]
 })
 </script>

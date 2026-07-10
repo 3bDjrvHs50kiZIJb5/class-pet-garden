@@ -59,7 +59,14 @@ router.get('/', authMiddleware, async (req, res) => {
   const filterToday = today === '1' || today === 'true'
 
   let countQuery = 'SELECT COUNT(*) as total FROM evaluation_records er JOIN classes c ON er.class_id = c.id'
-  let query = 'SELECT er.*, s.name as student_name FROM evaluation_records er JOIN students s ON er.student_id = s.id JOIN classes c ON er.class_id = c.id'
+  let query = `
+    SELECT er.*, s.name as student_name, tc.task_id, ct.title as task_title
+    FROM evaluation_records er
+    JOIN students s ON er.student_id = s.id
+    JOIN classes c ON er.class_id = c.id
+    LEFT JOIN task_completions tc ON tc.evaluation_record_id = er.id
+    LEFT JOIN class_tasks ct ON ct.id = tc.task_id
+  `
   const params = []
   const countParams = []
 

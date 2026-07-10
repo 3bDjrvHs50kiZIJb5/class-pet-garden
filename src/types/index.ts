@@ -41,6 +41,8 @@ export interface EvaluationRecord {
   category: string
   timestamp: number
   student_name?: string
+  task_id?: string | null
+  task_title?: string | null
 }
 
 // 徽章

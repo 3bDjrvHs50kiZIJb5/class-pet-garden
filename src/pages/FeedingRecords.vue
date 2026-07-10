@@ -10,6 +10,16 @@ import type { Class, EvaluationRecord } from '@/types'
 
 const categories = ['学习', '行为', '健康', '其他'] as const
 
+function normalizeCategory(category?: string | null) {
+  const trimmed = (category || '').trim()
+  if (!trimmed) return '其他'
+  return (categories as readonly string[]).includes(trimmed) ? trimmed : '其他'
+}
+
+function isTaskRecord(record: EvaluationRecord) {
+  return Boolean(record.task_id) || record.reason.startsWith('【任务】')
+}
+
 const categoryMeta: Record<string, { icon: string; color: string; bg: string }> = {
   学习: { icon: 'menu_book', color: 'text-[#2563eb]', bg: 'bg-[#eff6ff]' },
   行为: { icon: 'volunteer_activism', color: 'text-[#d97706]', bg: 'bg-[#fff7ed]' },
@@ -65,8 +75,9 @@ function formatRecordTime(timestamp?: number) {
 const filteredRecords = computed(() => {
   const query = keyword.value.trim().toLowerCase()
   return records.value.filter(record => {
-    if (pointFilter.value === 'positive' && record.points <= 0) return false
-    if (pointFilter.value === 'negative' && record.points >= 0) return false
+    const points = Number(record.points)
+    if (pointFilter.value === 'positive' && points <= 0) return false
+    if (pointFilter.value === 'negative' && points >= 0) return false
     if (query) {
       const haystack = `${record.student_name || ''} ${record.reason} ${record.category}`.toLowerCase()
       if (!haystack.includes(query)) return false
@@ -76,11 +87,20 @@ const filteredRecords = computed(() => {
 })
 
 const groupedRecords = computed(() =>
-  categories.map(category => ({
-    category,
-    records: filteredRecords.value.filter(record => (record.category || '其他') === category)
-  }))
+  categories.map(category => {
+    const all = filteredRecords.value.filter(record => normalizeCategory(record.category) === category)
+    return {
+      category,
+      total: all.length,
+      records: all
+    }
+  })
 )
+
+const ungroupedRecords = computed(() => {
+  const groupedIds = new Set(groupedRecords.value.flatMap(group => group.records.map(record => record.id)))
+  return filteredRecords.value.filter(record => !groupedIds.has(record.id))
+})
 
 const stats = computed(() => {
   const todayStart = new Date()
@@ -88,8 +108,8 @@ const stats = computed(() => {
   const todayTs = todayStart.getTime()
   return {
     total: totalRecords.value,
-    positive: filteredRecords.value.filter(record => record.points > 0).length,
-    negative: filteredRecords.value.filter(record => record.points < 0).length,
+    positive: filteredRecords.value.filter(record => Number(record.points) > 0).length,
+    negative: filteredRecords.value.filter(record => Number(record.points) < 0).length,
     today: filteredRecords.value.filter(record => record.timestamp >= todayTs).length
   }
 })
@@ -102,7 +122,7 @@ function showConfirm(options: {
   confirmText?: string
   cancelText?: string
   type?: 'info' | 'warning' | 'danger'
-  onConfirm: () => void
+  onConfirm: () => void | Promise<void>
 }) {
   confirmDialog.value = {
     show: true,
@@ -111,7 +131,10 @@ function showConfirm(options: {
     confirmText: options.confirmText || '确认',
     cancelText: options.cancelText || '取消',
     type: options.type || 'warning',
-    onConfirm: options.onConfirm
+    onConfirm: async () => {
+      confirmDialog.value.show = false
+      await options.onConfirm()
+    }
   }
 }
 
@@ -322,7 +345,7 @@ onMounted(async () => {
               <div
                 v-for="group in groupedRecords"
                 :key="group.category"
-                class="flex min-h-0 flex-col rounded-xl border border-[#f3ece4] bg-[#fffdfb]"
+                class="flex flex-col rounded-xl border border-[#f3ece4] bg-[#fffdfb]"
               >
                 <div class="flex items-center gap-2 border-b border-[#f3f0ec] px-3 py-2.5">
                   <span
@@ -334,9 +357,9 @@ onMounted(async () => {
                     </span>
                   </span>
                   <h3 class="min-w-0 flex-1 truncate text-sm font-bold text-[#795f50]">{{ group.category }}</h3>
-                  <span class="shrink-0 text-sm text-[#b0927c]">{{ group.records.length }} 条</span>
+                  <span class="shrink-0 text-sm text-[#b0927c]">{{ group.total }} 条</span>
                 </div>
-                <div v-if="group.records.length" class="max-h-[28rem] divide-y divide-[#f3f0ec] overflow-y-auto">
+                <div v-if="group.records.length" class="divide-y divide-[#f3f0ec]">
                   <div
                     v-for="record in group.records"
                     :key="record.id"
@@ -351,6 +374,7 @@ onMounted(async () => {
                       >
                         <p class="truncate text-sm font-medium text-[#4d3527]">{{ record.student_name }}</p>
                         <p class="mt-0.5 truncate text-sm text-[#806b5b]">{{ record.reason }}</p>
+                        <p v-if="isTaskRecord(record)" class="mt-1 text-xs font-semibold text-[#2563eb]">任务加分</p>
                         <p class="mt-1 text-sm text-[#b0927c]">{{ formatRecordTime(record.timestamp) }}</p>
                       </button>
                       <div class="flex shrink-0 flex-col items-end gap-1">
@@ -372,6 +396,55 @@ onMounted(async () => {
                   </div>
                 </div>
                 <p v-else class="px-3 py-6 text-center text-sm text-[#b9a697]">暂无记录</p>
+              </div>
+
+              <div
+                v-if="ungroupedRecords.length"
+                class="flex flex-col rounded-xl border border-[#f3ece4] bg-[#fffdfb] md:col-span-2 xl:col-span-4"
+              >
+                <div class="flex items-center gap-2 border-b border-[#f3f0ec] px-3 py-2.5">
+                  <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#f8fafc]">
+                    <span class="material-symbols-rounded text-[16px] text-[#64748b]">inventory_2</span>
+                  </span>
+                  <h3 class="min-w-0 flex-1 truncate text-sm font-bold text-[#795f50]">其他分类</h3>
+                  <span class="shrink-0 text-sm text-[#b0927c]">{{ ungroupedRecords.length }} 条</span>
+                </div>
+                <div class="divide-y divide-[#f3f0ec]">
+                  <div
+                    v-for="record in ungroupedRecords"
+                    :key="record.id"
+                    class="px-3 py-2.5"
+                  >
+                    <div class="flex items-start justify-between gap-2">
+                      <button
+                        type="button"
+                        class="min-w-0 flex-1 rounded-lg px-1 py-0.5 text-left transition hover:bg-[#fff8f2]"
+                        :aria-label="`查看 ${record.student_name} 的喂养记录`"
+                        @click="openStudentRecord(record)"
+                      >
+                        <p class="truncate text-sm font-medium text-[#4d3527]">{{ record.student_name }}</p>
+                        <p class="mt-0.5 truncate text-sm text-[#806b5b]">{{ record.reason }}</p>
+                        <p v-if="isTaskRecord(record)" class="mt-1 text-xs font-semibold text-[#2563eb]">任务加分</p>
+                        <p class="mt-1 text-sm text-[#b0927c]">{{ formatRecordTime(record.timestamp) }}</p>
+                      </button>
+                      <div class="flex shrink-0 flex-col items-end gap-1">
+                        <span
+                          class="min-w-[2rem] text-right text-sm font-bold tabular-nums"
+                          :class="record.points > 0 ? 'text-emerald-600' : record.points < 0 ? 'text-rose-600' : 'text-slate-500'"
+                        >
+                          {{ record.points > 0 ? '+' : '' }}{{ record.points }}
+                        </span>
+                        <button
+                          type="button"
+                          class="rounded-lg px-1.5 py-1 text-sm font-semibold text-orange-600 transition hover:bg-orange-50"
+                          @click.stop="undoRecord(record)"
+                        >
+                          撤回
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
