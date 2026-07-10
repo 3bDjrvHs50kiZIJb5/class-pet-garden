@@ -1342,7 +1342,7 @@ onUnmounted(() => {
               <span class="h-2 w-2 rounded-full bg-[#ff5c00]"></span>
               <span class="font-brand text-sm font-bold text-[#ff5c00]">班级宠物园</span>
             </div>
-            <h1 class="mt-[22px] max-w-[820px] font-serif text-5xl font-bold leading-[0.98] text-[#1a1a1a] sm:text-[68px]">把班级评价，变成孩子愿意坚持的成长。</h1>
+            <h1 class="mt-[22px] max-w-[820px] font-serif text-5xl font-bold leading-[0.98] text-[#1a1a1a] sm:text-[68px]">孩子的专属宠物，言行驱动成长。</h1>
             <p class="mt-[22px] max-w-[660px] text-base leading-[1.45] text-[#666] sm:text-xl">老师快速加分，学生的宠物随习惯一起升级。</p>
             <div class="mt-[22px] flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <button type="button" class="font-brand h-12 rounded-full bg-[#ff5c00] px-8 text-[15px] font-bold text-white shadow-[0_16px_40px_rgba(0,0,0,0.07)] transition hover:bg-[#e95300]" @click="enterDemoGarden">进入演示班级</button>
