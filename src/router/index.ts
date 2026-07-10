@@ -10,6 +10,7 @@ import ClassManage from '@/pages/ClassManage.vue'
 import ClassTasks from '@/pages/ClassTasks.vue'
 import Login from '@/pages/Login.vue'
 import Register from '@/pages/Register.vue'
+import StudentShare from '@/pages/StudentShare.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -23,7 +24,8 @@ const router = createRouter({
     { path: '/manage', alias: '/pet-garden/manage', name: 'manage', component: ClassManage },
     { path: '/vip', alias: '/pet-garden/vip', name: 'vip', component: ClassVip },
     { path: '/login', alias: '/pet-garden/login', name: 'login', component: Login },
-    { path: '/register', alias: '/pet-garden/register', name: 'register', component: Register }
+    { path: '/register', alias: '/pet-garden/register', name: 'register', component: Register },
+    { path: '/share/:studentId', alias: '/pet-garden/share/:studentId', name: 'student-share', component: StudentShare }
   ]
 })
 
@@ -39,6 +41,9 @@ function isAdminUser() {
 }
 
 router.beforeEach((to) => {
+  if (to.name === 'home' && typeof to.query.studentId === 'string' && to.query.studentId) {
+    return { name: 'student-share', params: { studentId: to.query.studentId } }
+  }
   if (to.name === 'manage' && !isAdminUser()) {
     return { name: 'home' }
   }

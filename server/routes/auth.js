@@ -5,6 +5,8 @@ import { hashPassword, verifyPassword } from '../utils/password.js'
 import { generateToken, verifyToken } from '../utils/token.js'
 import { authMiddleware } from '../middleware/auth.js'
 import { sendTeacherRegisterNotice } from '../services/showDocPushService.js'
+import { isValidPhone } from '../utils/phone.js'
+import { markWelcomeVipEligible } from '../utils/welcomeVip.js'
 
 const router = Router()
 
@@ -13,25 +15,20 @@ router.post('/register', async (req, res) => {
   const { username, password } = req.body
 
   if (!username || !password) {
-    return res.status(400).json({ error: '用户名和密码不能为空' })
+    return res.status(400).json({ error: '手机号和密码不能为空' })
   }
 
-  if (username.length < 3 || username.length > 20) {
-    return res.status(400).json({ error: '用户名长度3-20字符' })
-  }
-
-  if (username === 'admin') {
-    return res.status(400).json({ error: '该用户名不可注册' })
+  if (!isValidPhone(username)) {
+    return res.status(400).json({ error: '请输入正确的手机号' })
   }
 
   if (password.length < 6) {
     return res.status(400).json({ error: '密码至少6位' })
   }
 
-  // 检查用户名是否已存在
   const existingUser = await db.prepare('SELECT id FROM users WHERE username = ?').get(username)
   if (existingUser) {
-    return res.status(400).json({ error: '用户名已存在' })
+    return res.status(400).json({ error: '该手机号已注册' })
   }
 
   const userId = uuidv4()
@@ -41,13 +38,19 @@ router.post('/register', async (req, res) => {
   await db.prepare('INSERT INTO users (id, username, password_hash, is_guest, created_at) VALUES (?, ?, ?, ?, ?)')
     .run(userId, username, passwordHash, 0, createdAt)
 
+  await markWelcomeVipEligible(db, userId)
+
   void sendTeacherRegisterNotice(username, new Date(createdAt))
 
   const token = generateToken(userId)
   res.json({
     success: true,
     token,
-    user: { id: userId, username, isGuest: false }
+    user: { id: userId, username, isGuest: false },
+    welcomeVip: {
+      months: 1,
+      message: '创建首个班级后自动开通 1 个月灵犀计划',
+    },
   })
 })
 
@@ -56,17 +59,17 @@ router.post('/login', async (req, res) => {
   const { username, password } = req.body
 
   if (!username || !password) {
-    return res.status(400).json({ error: '用户名和密码不能为空' })
+    return res.status(400).json({ error: '手机号和密码不能为空' })
   }
 
   const user = await db.prepare('SELECT id, username, password_hash, is_guest FROM users WHERE username = ?').get(username)
 
   if (!user) {
-    return res.status(401).json({ error: '用户名或密码错误' })
+    return res.status(401).json({ error: '手机号或密码错误' })
   }
 
   if (!verifyPassword(password, user.password_hash)) {
-    return res.status(401).json({ error: '用户名或密码错误' })
+    return res.status(401).json({ error: '手机号或密码错误' })
   }
 
   const token = generateToken(user.id)

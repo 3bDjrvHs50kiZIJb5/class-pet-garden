@@ -30,7 +30,7 @@ describe('ShowDoc 注册推送', () => {
     })
 
     const registeredAt = new Date('2026-07-10T07:17:00.000Z')
-    await sendTeacherRegisterNotice('李老师', registeredAt)
+    await sendTeacherRegisterNotice('13800138000', registeredAt)
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
     const [url, options] = fetchMock.mock.calls[0]
@@ -41,7 +41,7 @@ describe('ShowDoc 注册推送', () => {
     const body = options.body.toString()
     expect(body).toContain('title=' + encodeURIComponent('班级宠物园，教师注册成功'))
     expect(body).toContain('content=')
-    expect(decodeURIComponent(body)).toContain('用户名：李老师')
+    expect(decodeURIComponent(body)).toContain('手机号：13800138000')
     expect(decodeURIComponent(body)).toContain('注册时间：')
   })
 

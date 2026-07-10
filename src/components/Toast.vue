@@ -40,7 +40,7 @@ onMounted(() => {
   <Transition name="toast">
     <div 
       v-if="visible"
-      class="fixed top-6 left-1/2 -translate-x-1/2 z-50"
+      class="fixed top-6 left-1/2 z-[200] -translate-x-1/2"
     >
       <div 
         class="px-6 py-4 rounded-2xl shadow-2xl text-white font-medium flex items-center gap-3 min-w-[300px] max-w-[500px]"

@@ -163,7 +163,7 @@ onMounted(loadRules)
         <div class="p-7 sm:p-10">
           <p class="text-sm font-bold tracking-[0.2em] text-[#d78248]">EVALUATION RULES</p>
           <h1 class="mt-3 font-serif text-4xl font-bold tracking-tight text-[#422d20] sm:text-5xl">评价规则</h1>
-          <p class="mt-4 whitespace-nowrap text-sm leading-7 text-[#806b5b] sm:text-base">
+          <p class="mt-4 whitespace-nowrap text-sm text-[#806b5b] sm:text-base">
             管理班级加减分标准。系统预置规则全员可见；自定义规则仅自己可见，且只能删除自己创建的规则。
           </p>
           <div class="mt-7 flex flex-wrap gap-3">

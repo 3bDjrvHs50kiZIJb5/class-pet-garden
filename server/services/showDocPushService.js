@@ -16,7 +16,7 @@ function formatRegisterTime(date = new Date()) {
  */
 export async function sendTeacherRegisterNotice(username, registeredAt = new Date()) {
   const title = '班级宠物园，教师注册成功'
-  const content = `用户名：${username}\n注册时间：${formatRegisterTime(registeredAt)}`
+  const content = `手机号：${username}\n注册时间：${formatRegisterTime(registeredAt)}`
   return sendAsync(title, content)
 }
 

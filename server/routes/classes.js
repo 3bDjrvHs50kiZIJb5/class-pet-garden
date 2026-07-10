@@ -2,6 +2,8 @@ import { Router } from 'express'
 import { v4 as uuidv4 } from 'uuid'
 import { db } from '../db.js'
 import { authMiddleware } from '../middleware/auth.js'
+import { grantWelcomeVipIfEligible } from '../utils/welcomeVip.js'
+import { normalizeVipRow } from './vip.js'
 
 const router = Router()
 const DEMO_CLASS_ID = 'demo-class-2026'
@@ -61,7 +63,20 @@ router.post('/', authMiddleware, async (req, res) => {
   await db.prepare('INSERT INTO classes (id, user_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)')
     .run(id, req.userId, name, now, now)
 
-  res.json({ id, user_id: req.userId, name, created_at: now, updated_at: now })
+  const welcomeVip = await grantWelcomeVipIfEligible(db, req.userId, id)
+  const vip = welcomeVip
+    ? normalizeVipRow(await db.prepare('SELECT * FROM class_vip_subscriptions WHERE class_id = ?').get(id))
+    : null
+
+  res.json({
+    id,
+    user_id: req.userId,
+    name,
+    created_at: now,
+    updated_at: now,
+    welcomeVipGranted: Boolean(welcomeVip),
+    vip,
+  })
 })
 
 // 更新班级

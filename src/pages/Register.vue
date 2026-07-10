@@ -3,12 +3,13 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
+import { isValidPhone } from '@/utils/phone'
 
 const router = useRouter()
 const { api, setUser, isGuest } = useAuth()
 const toast = useToast()
 
-const username = ref('')
+const phone = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const agreed = ref(false)
@@ -29,12 +30,12 @@ onMounted(() => {
 
 async function handleSubmit() {
   error.value = ''
-  if (!username.value.trim() || !password.value) {
-    error.value = '请输入用户名和密码'
+  if (!phone.value.trim() || !password.value) {
+    error.value = '请输入手机号和密码'
     return
   }
-  if (username.value.trim().length < 3) {
-    error.value = '用户名至少3个字符'
+  if (!isValidPhone(phone.value)) {
+    error.value = '请输入正确的手机号'
     return
   }
   if (password.value.length < 6) {
@@ -53,12 +54,13 @@ async function handleSubmit() {
   loading.value = true
   try {
     const res = await api.post('/auth/register', {
-      username: username.value.trim(),
+      username: phone.value.trim(),
       password: password.value
     })
     if (res.data.success) {
       setUser(res.data.user, res.data.token)
-      toast.success('注册成功，欢迎加入班级宠物园！')
+      const welcomeMessage = res.data.welcomeVip?.message
+      toast.success(welcomeMessage ? `注册成功！${welcomeMessage}` : '注册成功，欢迎加入班级宠物园！')
       router.replace('/')
     }
   } catch (err: any) {
@@ -78,7 +80,7 @@ async function handleSubmit() {
     </div>
 
     <div class="relative mx-auto flex min-h-screen max-w-6xl flex-col lg:flex-row">
-      <section class="flex flex-1 flex-col justify-center px-6 py-10 sm:px-10 lg:px-12 lg:py-16">
+      <section class="hidden flex-1 flex-col justify-center px-6 py-10 sm:px-10 lg:flex lg:px-12 lg:py-16">
         <div class="flex items-center gap-3.5">
           <span class="flex h-[52px] w-[52px] items-center justify-center rounded-2xl bg-[#ffe7c8] shadow-sm">
             <span class="material-symbols-rounded text-[28px] text-[#d97706]">pets</span>
@@ -114,7 +116,7 @@ async function handleSubmit() {
       <section class="flex flex-1 items-center justify-center px-6 py-10 sm:px-10 lg:px-12">
         <div class="w-full max-w-[440px] rounded-3xl border border-[#f0e7dd] bg-white p-7 shadow-[0_16px_40px_rgba(101,71,45,0.08)] sm:p-8">
           <h2 class="font-serif text-3xl font-bold text-[#1a1a1a]">创建老师账号</h2>
-          <p class="mt-2 text-sm text-[#666]">填写信息后即可开始创建班级</p>
+          <p class="mt-2 text-sm text-[#666]">填写信息后即可开始创建班级，新用户首个班级自动赠送 1 个月灵犀计划</p>
 
           <div v-if="error" class="mt-5 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-600">
             {{ error }}
@@ -122,15 +124,17 @@ async function handleSubmit() {
 
           <form class="mt-6 space-y-3" @submit.prevent="handleSubmit">
             <div>
-              <label class="mb-1.5 block text-sm font-semibold text-[#38281f]">用户名</label>
+              <label class="mb-1.5 block text-sm font-semibold text-[#38281f]">手机号</label>
               <label class="flex h-10 items-center gap-2.5 rounded-xl border border-[#edeff2] bg-white px-3.5 focus-within:border-orange-300">
-                <span class="material-symbols-rounded text-[18px] text-[#999]">person</span>
+                <span class="material-symbols-rounded text-[18px] text-[#999]">call</span>
                 <input
-                  v-model="username"
-                  type="text"
+                  v-model="phone"
+                  type="tel"
+                  maxlength="11"
+                  inputmode="numeric"
                   class="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[#b9a697]"
-                  placeholder="请输入用户名"
-                  autocomplete="username"
+                  placeholder="请输入手机号"
+                  autocomplete="tel"
                 />
               </label>
             </div>

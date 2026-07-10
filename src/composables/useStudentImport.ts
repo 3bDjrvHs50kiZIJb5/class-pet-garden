@@ -129,7 +129,11 @@ export function useStudentImport() {
       saveCurrentClassId(res.data.id, user.value?.id)
       newImportClassName.value = ''
       showCreateClassInline.value = false
-      toast.success('班级创建成功')
+      if (res.data.welcomeVipGranted) {
+        toast.success('班级创建成功！已为您自动开通 1 个月灵犀计划')
+      } else {
+        toast.success('班级创建成功')
+      }
       notifyClassesChanged(res.data.id, 0)
     } catch (error) {
       console.error('创建班级失败:', error)

@@ -499,7 +499,7 @@ onUnmounted(() => {
         <div class="p-7 sm:p-10">
           <p class="text-sm font-bold tracking-[0.2em] text-[#d78248]">CLASS TASKS</p>
           <h1 class="mt-3 font-serif text-4xl font-bold tracking-tight text-[#422d20] sm:text-5xl">班级任务</h1>
-          <p class="mt-4 text-sm leading-7 text-[#806b5b] sm:text-base">
+          <p class="mt-4 whitespace-nowrap text-sm text-[#806b5b] sm:text-base">
             发布可追踪目标，学生完成后自动按规则加分。适合晨读打卡、值日安排、作业提交等班级日常管理。
           </p>
           <div class="mt-7 flex flex-wrap gap-3">

@@ -167,7 +167,7 @@ onMounted(loadOverview)
         <div class="p-7 sm:p-10">
           <p class="text-sm font-bold tracking-[0.2em] text-[#d78248]">LINGXI PLAN</p>
           <h1 class="mt-3 font-serif text-4xl font-bold tracking-tight text-[#422d20] sm:text-5xl">灵犀计划</h1>
-          <p class="mt-4 max-w-xl text-sm leading-7 text-[#806b5b] sm:text-base">
+          <p class="mt-4 whitespace-nowrap text-sm text-[#806b5b] sm:text-base">
             灵犀计划按班级独立开通。若您管理多个班级，可为每个班级分别订阅，互不影响。开通后该班级即可使用全部高级功能。
           </p>
           <div class="mt-7 flex flex-wrap gap-3">

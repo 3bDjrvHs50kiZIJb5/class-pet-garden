@@ -23,6 +23,7 @@ import backupRoutes from './routes/backup.js'
 import settingsRoutes from './routes/settings.js'
 import vipRoutes from './routes/vip.js'
 import adminRoutes from './routes/admin.js'
+import publicRoutes from './routes/public.js'
 
 const app = express()
 const PORT = Number(process.env.PORT || 3002)
@@ -46,6 +47,7 @@ async function waitForDatabase(maxAttempts = 30, delayMs = 2000) {
 }
 
 function registerApiRoutes(basePath) {
+  app.use(`${basePath}/public`, publicRoutes)
   app.use(`${basePath}/auth`, authRoutes)
   app.use(`${basePath}/classes`, classRoutes)
   app.use(`${basePath}/students`, studentRoutes)

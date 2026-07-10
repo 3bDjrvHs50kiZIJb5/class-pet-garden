@@ -120,7 +120,7 @@ async function loadRanking() {
 }
 
 function openStudent(student: RankingStudent) {
-  router.push({ path: '/', query: { studentId: student.id } })
+  router.push({ name: 'student-share', params: { studentId: student.id } })
 }
 
 onMounted(async () => {

@@ -13,6 +13,12 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@fontsource/funnel-sans": "^5.2.8",
+    "@fontsource/geist": "^5.2.9",
+    "@fontsource/geist-mono": "^5.2.8",
+    "@fontsource/newsreader": "^5.2.10",
+    "@fontsource/noto-sans-sc": "^5.2.9",
+    "@fontsource/noto-serif-sc": "^5.2.9",
     "axios": "^1.6.0",
     "material-symbols": "^0.45.6",
     "pinia": "^2.1.0",

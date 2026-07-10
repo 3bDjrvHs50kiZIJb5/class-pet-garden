@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import AppShell from '@/components/AppShell.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { useAuth } from '@/composables/useAuth'
@@ -21,6 +22,7 @@ const PAGE_SIZE = 100
 
 const { api, user } = useAuth()
 const toast = useToast()
+const router = useRouter()
 
 const classes = ref<Class[]>([])
 const currentClass = ref<Class | null>(null)
@@ -166,6 +168,11 @@ function goToPage(nextPage: number) {
   if (nextPage < 1 || nextPage > totalPages.value || nextPage === page.value) return
   page.value = nextPage
   loadRecords()
+}
+
+function openStudentRecord(record: EvaluationRecord) {
+  if (!record.student_id) return
+  router.push({ name: 'student-share', params: { studentId: record.student_id } })
 }
 
 function undoRecord(record: EvaluationRecord) {
@@ -336,11 +343,16 @@ onMounted(async () => {
                     class="px-3 py-2.5"
                   >
                     <div class="flex items-start justify-between gap-2">
-                      <div class="min-w-0 flex-1">
+                      <button
+                        type="button"
+                        class="min-w-0 flex-1 rounded-lg px-1 py-0.5 text-left transition hover:bg-[#fff8f2]"
+                        :aria-label="`查看 ${record.student_name} 的喂养记录`"
+                        @click="openStudentRecord(record)"
+                      >
                         <p class="truncate text-sm font-medium text-[#4d3527]">{{ record.student_name }}</p>
                         <p class="mt-0.5 truncate text-sm text-[#806b5b]">{{ record.reason }}</p>
                         <p class="mt-1 text-sm text-[#b0927c]">{{ formatRecordTime(record.timestamp) }}</p>
-                      </div>
+                      </button>
                       <div class="flex shrink-0 flex-col items-end gap-1">
                         <span
                           class="min-w-[2rem] text-right text-sm font-bold tabular-nums"
@@ -351,7 +363,7 @@ onMounted(async () => {
                         <button
                           type="button"
                           class="rounded-lg px-1.5 py-1 text-sm font-semibold text-orange-600 transition hover:bg-orange-50"
-                          @click="undoRecord(record)"
+                          @click.stop="undoRecord(record)"
                         >
                           撤回
                         </button>

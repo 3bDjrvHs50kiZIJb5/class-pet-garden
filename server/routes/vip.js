@@ -48,6 +48,14 @@ export const VIP_PLANS = {
     days: 0,
     description: '演示班级专属，永不过期',
   },
+  welcome: {
+    id: 'welcome',
+    label: '新用户礼遇',
+    price: 0,
+    unit: '月',
+    days: 30,
+    description: '注册赠送 1 个月会员',
+  },
 }
 
 export const PUBLIC_VIP_PLAN_IDS = ['month', 'semester', 'year']

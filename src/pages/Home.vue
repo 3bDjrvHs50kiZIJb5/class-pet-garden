@@ -91,8 +91,8 @@ const deleteStudentList = ref<string[]>([])
 const recordsPage = ref(1)
 const recordsPageSize = 20
 const totalRecords = ref(0)
-const sortBy = ref<'name' | 'studentNo' | 'progress' | 'points'>('points')
-const sortOrder = ref<'asc' | 'desc'>('desc')
+const sortBy = ref<'name' | 'studentNo' | 'progress' | 'points'>('studentNo')
+const sortOrder = ref<'asc' | 'desc'>('asc')
 const studentDisplayOrder = ref<string[]>([])
 const showSortMenu = ref(false)
 const showPetMenu = ref(false)
@@ -308,16 +308,35 @@ function setSort(by: 'name' | 'studentNo' | 'progress' | 'points', order: 'asc' 
   sortBy.value = by
   sortOrder.value = order
   showSortMenu.value = false
+  applyStudentSort()
 }
 
-function togglePointsSort() {
-  if (sortBy.value === 'points') {
-    sortOrder.value = sortOrder.value === 'desc' ? 'asc' : 'desc'
-    return
+function cycleStudentSort() {
+  if (sortBy.value === 'studentNo') {
+    sortBy.value = 'points'
+    sortOrder.value = 'desc'
+  } else if (sortBy.value === 'points' && sortOrder.value === 'desc') {
+    sortOrder.value = 'asc'
+  } else {
+    sortBy.value = 'studentNo'
+    sortOrder.value = 'asc'
   }
-  sortBy.value = 'points'
-  sortOrder.value = 'desc'
+  applyStudentSort()
 }
+
+const studentSortLabel = computed(() => (
+  sortBy.value === 'studentNo' ? '按学号排序' : '按积分排序'
+))
+
+const studentSortIcon = computed(() => {
+  if (sortBy.value === 'studentNo') return 'format_list_numbered'
+  return sortOrder.value === 'asc' ? 'arrow_upward' : 'arrow_downward'
+})
+
+const studentSortAriaLabel = computed(() => {
+  if (sortBy.value === 'studentNo') return '按学号排序'
+  return sortOrder.value === 'desc' ? '按积分降序排序' : '按积分升序排序'
+})
 
 function compareStudents(a: Student, b: Student) {
   let comparison = 0
@@ -727,11 +746,15 @@ async function createClass() {
     return
   }
   try {
-    await api.post('/classes', { name: newClassName.value.trim() })
+    const res = await api.post('/classes', { name: newClassName.value.trim() })
     newClassName.value = ''
     showClassModal.value = false
     await loadClasses()
-    toast.success('班级创建成功！')
+    if (res.data.welcomeVipGranted) {
+      toast.success('班级创建成功！已为您自动开通 1 个月灵犀计划')
+    } else {
+      toast.success('班级创建成功！')
+    }
   } catch (error) {
     console.error('创建班级失败:', error)
     toast.error('创建班级失败，请重试')
@@ -937,6 +960,17 @@ async function loadStudentRecords(studentId: string) {
   }
 }
 
+async function shareDetailStudentRecords() {
+  if (!detailStudent.value) return
+  const url = `${window.location.origin}/pet-garden/share/${detailStudent.value.id}`
+  try {
+    await navigator.clipboard.writeText(url)
+    toast.success('成长分享链接已复制，可发给家长查看')
+  } catch {
+    toast.error('复制失败，请手动复制链接')
+  }
+}
+
 // 关闭详情面板
 function closeDetailPanel() {
   showDetailPanel.value = false
@@ -1082,10 +1116,14 @@ async function detailQuickAdd(rule: Rule) {
   if (!detailStudent.value) return
 
   const student = detailStudent.value
-  const success = await applyEvaluationToStudent(student, rule)
+  const success = await quickAdd(student, rule)
   if (success) {
     closeDetailPanel()
   }
+}
+
+function showEvaluationSuccessToast(student: Student, rule: Rule) {
+  toast.success(`${student.name} ${rule.points > 0 ? '+' : ''}${rule.points} ${rule.name}`)
 }
 
 async function applyEvaluationToStudent(student: Student, rule: Rule): Promise<boolean> {
@@ -1142,15 +1180,23 @@ async function stampQuickEval(student: Student) {
     return
   }
 
-  const rule = activeStampRule.value
-  const success = await applyEvaluationToStudent(student, rule)
-  if (success) {
-    toast.success(`${student.name} ${rule.points > 0 ? '+' : ''}${rule.points} ${rule.name}`)
-  }
+  await quickAdd(student, activeStampRule.value)
 }
 
-async function quickAdd(student: Student, rule: Rule) {
-  await applyEvaluationToStudent(student, rule)
+async function quickAdd(student: Student, rule: Rule): Promise<boolean> {
+  const success = await applyEvaluationToStudent(student, rule)
+  if (success) {
+    showEvaluationSuccessToast(student, rule)
+  }
+  return success
+}
+
+async function modalQuickAdd(rule: Rule) {
+  if (!selectedStudent.value) return
+  const success = await quickAdd(selectedStudent.value, rule)
+  if (success) {
+    closeAddModal()
+  }
 }
 
 async function loadEvaluationRecords() {
@@ -1302,6 +1348,22 @@ onMounted(async () => {
   window.addEventListener('click', handleDocumentClick)
   isLoading.value = true
   try {
+    const wantsDemo = route.query.demo === '1'
+    if (wantsDemo) {
+      const studentId = route.query.studentId
+      router.replace({
+        path: route.path,
+        query: typeof studentId === 'string' ? { studentId } : {}
+      })
+      await enterDemoGarden()
+      await openStudentFromQuery()
+      return
+    }
+    if (isGuest.value && getSavedClassId(user.value?.id) === DEMO_CLASS_ID) {
+      await enterDemoGarden()
+      await openStudentFromQuery()
+      return
+    }
     const shouldLand = await shouldShowLanding()
     showLanding.value = shouldLand
     if (!shouldLand) {
@@ -1346,7 +1408,7 @@ onUnmounted(() => {
             <p class="mt-[22px] max-w-[660px] text-base leading-[1.45] text-[#666] sm:text-xl">老师快速加分，学生的宠物随习惯一起升级。</p>
             <div class="mt-[22px] flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <button type="button" class="font-brand h-12 rounded-full bg-[#ff5c00] px-8 text-[15px] font-bold text-white shadow-[0_16px_40px_rgba(0,0,0,0.07)] transition hover:bg-[#e95300]" @click="enterDemoGarden">进入演示班级</button>
-              <router-link to="/login" class="font-brand inline-flex h-12 items-center rounded-full border border-[#ff5c00] bg-white px-8 text-[15px] font-bold text-[#ff5c00] transition hover:bg-[#fff3ec]">我是老师，创建新班级</router-link>
+              <router-link to="/register" class="font-brand inline-flex h-12 items-center rounded-full border border-[#ff5c00] bg-white px-8 text-[15px] font-bold text-[#ff5c00] transition hover:bg-[#fff3ec]">我是老师，创建新班级</router-link>
             </div>
             <div class="mt-[22px] flex h-[86px] w-full max-w-[420px] items-center justify-center gap-[18px] rounded-xl border border-[#f3f4f6] bg-white px-[18px] py-[14px] text-left shadow-[0_16px_40px_rgba(0,0,0,0.07)]">
               <div class="relative h-[58px] w-[58px] shrink-0 rounded-xl bg-[#fff3ec]">
@@ -1396,7 +1458,7 @@ onUnmounted(() => {
               <span class="text-[#666]">导入学生，设置评价规则，让成长被看见。</span>
               <button type="button" class="font-brand font-bold text-[#ff5c00] underline-offset-2 transition hover:text-[#e95300] hover:underline" @click="enterDemoGarden">进入演示班级</button>
               <span class="text-[#ccc]">·</span>
-              <router-link to="/login" class="font-brand font-bold text-[#ff5c00] underline-offset-2 transition hover:text-[#e95300] hover:underline">我是老师，创建新班级</router-link>
+              <router-link to="/register" class="font-brand font-bold text-[#ff5c00] underline-offset-2 transition hover:text-[#e95300] hover:underline">我是老师，创建新班级</router-link>
             </div>
             <p class="font-brand text-sm text-[#888]">© 2026 班级宠物园。保留所有权利。</p>
           </div>
@@ -1491,9 +1553,9 @@ onUnmounted(() => {
                     <h1 class="text-lg font-bold">学生宠物卡片</h1>
                   </div>
                   <div class="flex items-center gap-2 text-sm leading-5 text-[#666]">
-                    <button type="button" aria-label="按积分排序" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#f0e7dd] text-[#666] transition hover:bg-[#fff8f2] hover:text-[#ff5c00] lg:h-auto lg:w-auto lg:gap-1 lg:border-0 lg:hover:bg-transparent" @click="togglePointsSort">
-                      <span class="hidden lg:inline">按积分排序</span>
-                      <span class="material-symbols-rounded text-[16px] leading-none lg:text-[16px]">{{ sortBy === 'points' && sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</span>
+                    <button type="button" :aria-label="studentSortAriaLabel" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#f0e7dd] text-[#666] transition hover:bg-[#fff8f2] hover:text-[#ff5c00] lg:h-auto lg:w-auto lg:gap-1 lg:border-0 lg:hover:bg-transparent" :class="sortBy === 'points' ? 'border-[#ff9f1c] bg-[#fff1e8] text-[#ff7a1a] lg:border lg:border-[#ff9f1c]' : ''" @click="cycleStudentSort">
+                      <span class="hidden lg:inline">{{ studentSortLabel }}</span>
+                      <span class="material-symbols-rounded text-[16px] leading-none lg:text-[16px]">{{ studentSortIcon }}</span>
                     </button>
                     <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#f0e7dd] text-[#666] transition hover:bg-[#fff8f2] hover:text-[#ff7a1a] disabled:cursor-not-allowed disabled:opacity-50" aria-label="刷新数据" :disabled="isRefreshing" @click="refreshDashboard"><span class="material-symbols-rounded text-[18px] leading-none" :class="isRefreshing ? 'animate-spin' : ''">refresh</span></button>
                     <button type="button" :class="viewModeButtonClass('grid')" aria-label="卡片视图" @click="setStudentViewMode('grid')"><span class="material-symbols-rounded text-[18px] leading-none">grid_view</span></button>
@@ -1532,7 +1594,7 @@ onUnmounted(() => {
                   <article v-for="student in displayedStudents" :key="student.id" class="rounded-[15px] border border-orange-200 bg-[#fff6e8] px-3 py-2.5 transition hover:bg-[#fff1e0]" :class="stampMode && activeStampRule ? 'cursor-pointer ring-2 ring-rose-100 hover:ring-rose-300' : ''" @click="stampMode ? handleStudentCardClick(student) : undefined">
                     <div class="flex items-center gap-3">
                       <button type="button" class="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white" @click.stop="handleStudentCardClick(student)"><img v-if="student.pet_type" :src="getStudentPetImage(student)" :alt="getPetType(student.pet_type)?.name" class="h-full w-full object-contain p-1" /><span v-else class="text-xl">?</span><span class="absolute -bottom-1 -right-1 rounded-full px-2 py-0.5 text-xs font-extrabold tracking-wide" :class="getLevelBadgeClass(getDisplayLevel(student))">Lv.{{ getDisplayLevel(student) }}</span></button>
-                      <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><p class="text-sm font-bold leading-tight">{{ student.name }}</p><span :class="[BADGE_CLASS, getStudentStatusTag(student).class]">{{ getStudentStatusTag(student).label }}</span></div><p class="mt-0.5 text-sm text-[#888]"><template v-if="student.student_no">学号：{{ student.student_no }} · </template>{{ student.pet_type ? getPetType(student.pet_type)?.name : '等待领养' }}</p><div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white"><div class="h-full rounded-full bg-[#ff9f1c]" :style="{ width: `${getStudentProgress(student).percent}%` }"></div></div></div>
+                      <div class="min-w-0 flex-1"><div class="flex flex-nowrap items-center gap-1"><p class="min-w-0 text-sm font-bold leading-tight">{{ student.name }}</p><span :class="[BADGE_CLASS, getStudentStatusTag(student).class]">{{ getStudentStatusTag(student).label }}</span></div><p class="mt-0.5 text-sm text-[#888]"><template v-if="student.student_no">学号：{{ student.student_no }} · </template>{{ student.pet_type ? getPetType(student.pet_type)?.name : '等待领养' }}</p><div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white"><div class="h-full rounded-full bg-[#ff9f1c]" :style="{ width: `${getStudentProgress(student).percent}%` }"></div></div></div>
                       <div class="shrink-0 text-right"><p class="text-sm font-bold text-[#ff7a1a]">{{ student.total_points }}</p><div class="mt-1 flex gap-1"><button type="button" class="rounded-md border border-emerald-200 px-2 py-1 text-sm font-bold text-emerald-600" @click.stop="openCardQuickEval(student, true)">+</button><button type="button" class="rounded-md border border-rose-200 px-2 py-1 text-sm font-bold text-rose-500" @click.stop="openCardQuickEval(student, false)">-</button></div></div>
                     </div>
                   </article>
@@ -1727,8 +1789,8 @@ onUnmounted(() => {
 
     <Transition><div v-if="showClassModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 p-4"><div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><p class="text-sm font-bold tracking-wider text-orange-600">CLASS</p><h2 class="mt-1 font-serif text-2xl font-bold">{{ editingClass ? '编辑班级' : '创建班级' }}</h2><input v-model="newClassName" class="mt-5 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-orange-400" placeholder="例如：三年二班" @keyup.enter="editingClass ? updateClass() : createClass()" /><div class="mt-5 flex justify-end gap-2"><button type="button" class="px-4 py-2 text-sm" @click="showClassModal = false">取消</button><button type="button" class="rounded-xl bg-orange-600 px-4 py-2 text-sm font-bold text-white" @click="editingClass ? updateClass() : createClass()">确认</button></div></div></div></Transition>
     <Transition><div v-if="showStudentModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 p-4"><div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><h2 class="font-serif text-2xl font-bold">添加学生</h2><input v-model="newStudentName" class="mt-5 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-orange-400" placeholder="学生姓名" /><input v-model="newStudentNo" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-orange-400" placeholder="学号（可选）" /><div class="mt-5 flex justify-end gap-2"><button type="button" class="px-4 py-2 text-sm" @click="showStudentModal = false">取消</button><button type="button" class="rounded-xl bg-orange-600 px-4 py-2 text-sm font-bold text-white" @click="addStudent">添加</button></div></div></div></Transition>
-    <Transition><div v-if="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 p-4"><div class="max-h-[85vh] w-full max-w-3xl overflow-auto rounded-3xl bg-white p-6 shadow-2xl"><div class="flex items-center justify-between"><div><p class="text-sm font-bold tracking-wider text-orange-600">EVALUATION</p><h2 class="mt-1 font-serif text-2xl font-bold">为 {{ selectedStudent?.name }} 评价</h2></div><button type="button" class="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100" @click="closeAddModal"><span class="material-symbols-rounded text-[20px]">close</span></button></div><div class="mt-5 flex flex-wrap gap-2"><button v-for="cat in categories" :key="cat" type="button" class="rounded-full px-4 py-2 text-sm font-semibold" :class="selectedEvalTab === cat ? 'bg-orange-600 text-white' : 'bg-slate-100 text-slate-600'" @click="selectedEvalTab = cat">{{ cat }}</button></div><div class="mt-5 grid gap-3 sm:grid-cols-3"><button v-for="rule in modalEvaluationRules" :key="rule.id" type="button" class="rounded-2xl border p-4 text-left" :class="rule.points > 0 ? 'border-emerald-100 bg-emerald-50' : 'border-rose-100 bg-rose-50'" @click="selectedStudent && quickAdd(selectedStudent, rule); closeAddModal()"><span class="text-xl font-bold" :class="rule.points > 0 ? 'text-emerald-600' : 'text-rose-600'">{{ rule.points > 0 ? '+' : '' }}{{ rule.points }}</span><span class="mt-3 block text-sm font-semibold">{{ rule.name }}</span></button></div><p v-if="!modalEvaluationRules.length" class="py-8 text-center text-sm text-slate-400">当前分类下没有可用规则</p></div></div></Transition>
-    <Transition><div v-if="showDetailPanel && detailStudent" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 p-4" @click.self="closeDetailPanel"><div class="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-3xl bg-white shadow-2xl"><div class="bg-orange-600 px-6 pb-3.5 pt-5 text-white"><div class="flex gap-4"><div class="flex h-[108px] w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/20 sm:h-[116px] sm:w-28"><img v-if="detailStudent.pet_type" :src="getStudentPetImage(detailStudent)" class="h-full w-full rounded-2xl object-contain" /><span v-else class="text-4xl">?</span></div><div class="flex min-w-0 flex-1 flex-col"><div class="flex items-start justify-between gap-3"><div class="min-w-0"><h2 class="font-serif text-2xl font-bold">{{ detailStudent.name }}</h2><p class="mt-1 text-sm text-orange-100">{{ getPetType(detailStudent.pet_type || '')?.name || '等待领养' }} · Lv.{{ getDisplayLevel(detailStudent) }} · {{ detailStudent.total_points }} 积分</p></div><div class="flex shrink-0 items-center gap-2"><button v-if="!detailStudent.pet_type" type="button" class="inline-flex h-8 items-center gap-1 rounded-full bg-white/10 px-3 text-sm font-semibold text-white transition hover:bg-white/20" aria-label="领养宠物" @click="openPetSelect(detailStudent)"><span class="material-symbols-rounded text-[18px]">pets</span><span class="hidden sm:inline">领养</span></button><button v-if="detailStudent.pet_type" type="button" class="inline-flex h-8 items-center gap-1 rounded-full bg-white/10 px-3 text-sm font-semibold text-white transition hover:bg-white/20" aria-label="更换宠物" @click="openPetSelect(detailStudent)"><span class="material-symbols-rounded text-[18px]">swap_horiz</span><span class="hidden sm:inline">更换宠物</span></button><button type="button" class="inline-flex h-8 items-center gap-1 rounded-full bg-white/10 px-3 text-sm font-semibold text-white transition hover:bg-rose-500/80" aria-label="删除学生" data-testid="delete-student-button" @click="deleteDetailStudent"><span class="material-symbols-rounded text-[18px]">delete</span><span class="hidden sm:inline">删除</span></button><button type="button" class="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20" aria-label="关闭" @click="closeDetailPanel"><span class="material-symbols-rounded text-[20px]">close</span></button></div></div><div class="mt-2"><div class="mb-1 flex items-center justify-between text-xs text-orange-100"><span>成长进度</span><span>Lv.{{ getDisplayLevel(detailStudent) }} · {{ getLevelProgress(detailStudent.pet_exp).current }}/{{ getLevelProgress(detailStudent.pet_exp).required }}</span></div><div class="h-2.5 overflow-hidden rounded-full bg-white/30"><div class="h-full rounded-full bg-white" :style="{ width: `${getLevelProgress(detailStudent.pet_exp).percentage}%` }"></div></div></div></div></div></div><div class="p-6"><h3 class="font-serif text-xl font-bold">快速评价</h3><div class="mt-4 flex flex-wrap gap-2"><button v-for="cat in categories" :key="cat" type="button" class="rounded-full px-3 py-1.5 text-sm font-bold" :class="detailEvalTab === cat ? 'bg-orange-600 text-white' : 'bg-slate-100 text-slate-600'" @click="detailEvalTab = cat">{{ cat }}</button></div><div class="mt-4 grid gap-2 sm:grid-cols-3"><button v-for="rule in rules.filter(rule => rule.category === detailEvalTab)" :key="rule.id" type="button" class="rounded-xl border p-3 text-left" :class="rule.points > 0 ? 'border-emerald-100 bg-emerald-50' : 'border-rose-100 bg-rose-50'" @click="detailQuickAdd(rule)"><b :class="rule.points > 0 ? 'text-emerald-600' : 'text-rose-600'">{{ rule.points > 0 ? '+' : '' }}{{ rule.points }}</b><span class="mt-1 block text-sm font-semibold">{{ rule.name }}</span></button></div><h3 class="mt-7 font-serif text-xl font-bold">最近记录</h3><div class="mt-3 space-y-2"><div v-for="record in studentRecords.slice(0, 5)" :key="record.id" class="flex items-center justify-between rounded-xl bg-slate-50 p-3 text-sm"><span>{{ record.reason }}</span><span :class="record.points > 0 ? 'text-emerald-600' : 'text-rose-600'" class="font-bold">{{ record.points > 0 ? '+' : '' }}{{ record.points }}</span></div><p v-if="!studentRecords.length" class="py-5 text-center text-sm text-slate-400">暂无评价记录</p></div></div></div></div></Transition>
+    <Transition><div v-if="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 p-4"><div class="max-h-[85vh] w-full max-w-3xl overflow-auto rounded-3xl bg-white p-6 shadow-2xl"><div class="flex items-center justify-between"><div><p class="text-sm font-bold tracking-wider text-orange-600">EVALUATION</p><h2 class="mt-1 font-serif text-2xl font-bold">为 {{ selectedStudent?.name }} 评价</h2></div><button type="button" class="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100" @click="closeAddModal"><span class="material-symbols-rounded text-[20px]">close</span></button></div><div class="mt-5 flex flex-wrap gap-2"><button v-for="cat in categories" :key="cat" type="button" class="rounded-full px-4 py-2 text-sm font-semibold" :class="selectedEvalTab === cat ? 'bg-orange-600 text-white' : 'bg-slate-100 text-slate-600'" @click="selectedEvalTab = cat">{{ cat }}</button></div><div class="mt-5 grid gap-3 sm:grid-cols-3"><button v-for="rule in modalEvaluationRules" :key="rule.id" type="button" class="rounded-2xl border p-4 text-left" :class="rule.points > 0 ? 'border-emerald-100 bg-emerald-50' : 'border-rose-100 bg-rose-50'" @click="modalQuickAdd(rule)"><span class="text-xl font-bold" :class="rule.points > 0 ? 'text-emerald-600' : 'text-rose-600'">{{ rule.points > 0 ? '+' : '' }}{{ rule.points }}</span><span class="mt-3 block text-sm font-semibold">{{ rule.name }}</span></button></div><p v-if="!modalEvaluationRules.length" class="py-8 text-center text-sm text-slate-400">当前分类下没有可用规则</p></div></div></Transition>
+    <Transition><div v-if="showDetailPanel && detailStudent" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 p-4" @click.self="closeDetailPanel"><div class="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-3xl bg-white shadow-2xl"><div class="bg-orange-600 px-6 pb-3.5 pt-5 text-white"><div class="flex gap-4"><div class="flex h-[108px] w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/20 sm:h-[116px] sm:w-28"><img v-if="detailStudent.pet_type" :src="getStudentPetImage(detailStudent)" class="h-full w-full rounded-2xl object-contain" /><span v-else class="text-4xl">?</span></div><div class="flex min-w-0 flex-1 flex-col"><div class="flex items-start justify-between gap-3"><div class="min-w-0"><h2 class="font-serif text-2xl font-bold">{{ detailStudent.name }}</h2><p class="mt-1 text-sm text-orange-100">{{ getPetType(detailStudent.pet_type || '')?.name || '等待领养' }} · Lv.{{ getDisplayLevel(detailStudent) }} · {{ detailStudent.total_points }} 积分</p></div><div class="flex shrink-0 items-center gap-1.5 sm:gap-2"><button v-if="!detailStudent.pet_type" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-sm font-semibold text-white transition hover:bg-white/20 sm:order-1 sm:w-auto sm:gap-1 sm:px-3" aria-label="领养宠物" @click="openPetSelect(detailStudent)"><span class="material-symbols-rounded text-[18px]">pets</span><span class="hidden sm:inline">领养</span></button><button v-if="detailStudent.pet_type" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-sm font-semibold text-white transition hover:bg-white/20 sm:order-1 sm:w-auto sm:gap-1 sm:px-3" aria-label="更换宠物" @click="openPetSelect(detailStudent)"><span class="material-symbols-rounded text-[18px]">swap_horiz</span><span class="hidden sm:inline">更换宠物</span></button><button type="button" class="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 sm:order-3" aria-label="关闭" @click="closeDetailPanel"><span class="material-symbols-rounded text-[20px]">close</span></button><button type="button" class="hidden h-8 items-center gap-1 rounded-full bg-white/10 px-3 text-sm font-semibold text-white transition hover:bg-rose-500/80 sm:order-2 sm:inline-flex" aria-label="删除学生" data-testid="delete-student-button" @click="deleteDetailStudent"><span class="material-symbols-rounded text-[18px]">delete</span><span>删除</span></button></div></div><div class="mt-2"><div class="mb-1 flex items-center justify-between text-xs text-orange-100"><span>成长进度</span><span>Lv.{{ getDisplayLevel(detailStudent) }} · {{ getLevelProgress(detailStudent.pet_exp).current }}/{{ getLevelProgress(detailStudent.pet_exp).required }}</span></div><div class="h-2.5 overflow-hidden rounded-full bg-white/30"><div class="h-full rounded-full bg-white" :style="{ width: `${getLevelProgress(detailStudent.pet_exp).percentage}%` }"></div></div></div></div></div></div><div class="p-6"><h3 class="font-serif text-xl font-bold">快速评价</h3><div class="mt-4 flex flex-wrap gap-2"><button v-for="cat in categories" :key="cat" type="button" class="rounded-full px-3 py-1.5 text-sm font-bold" :class="detailEvalTab === cat ? 'bg-orange-600 text-white' : 'bg-slate-100 text-slate-600'" @click="detailEvalTab = cat">{{ cat }}</button></div><div class="mt-4 grid gap-2 sm:grid-cols-3"><button v-for="rule in rules.filter(rule => rule.category === detailEvalTab)" :key="rule.id" type="button" class="rounded-xl border p-3 text-left" :class="rule.points > 0 ? 'border-emerald-100 bg-emerald-50' : 'border-rose-100 bg-rose-50'" @click="detailQuickAdd(rule)"><b :class="rule.points > 0 ? 'text-emerald-600' : 'text-rose-600'">{{ rule.points > 0 ? '+' : '' }}{{ rule.points }}</b><span class="mt-1 block text-sm font-semibold">{{ rule.name }}</span></button></div><div class="mt-7 flex items-center justify-between gap-3"><h3 class="font-serif text-xl font-bold">最近记录</h3><button type="button" class="inline-flex h-8 shrink-0 items-center gap-1 rounded-full border border-orange-200 bg-[#fff7ed] px-3 text-sm font-semibold text-[#c2410c] transition hover:bg-[#ffedd5]" aria-label="分享成长记录" @click="shareDetailStudentRecords"><span class="material-symbols-rounded text-[16px]">share</span><span class="hidden sm:inline">分享成长</span></button></div><div class="mt-3 space-y-2"><div v-for="record in studentRecords.slice(0, 5)" :key="record.id" class="flex items-center justify-between rounded-xl bg-slate-50 p-3 text-sm"><span>{{ record.reason }}</span><span :class="record.points > 0 ? 'text-emerald-600' : 'text-rose-600'" class="font-bold">{{ record.points > 0 ? '+' : '' }}{{ record.points }}</span></div><p v-if="!studentRecords.length" class="py-5 text-center text-sm text-slate-400">暂无评价记录</p></div></div></div></div></Transition>
     <Transition><div v-if="showPetModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 p-4"><div class="max-h-[85vh] w-full max-w-3xl overflow-auto rounded-3xl bg-white p-6 shadow-2xl"><div class="flex items-center justify-between"><h2 class="font-serif text-2xl font-bold">为 {{ selectedStudent?.name }} 选择宠物</h2><button type="button" class="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100" @click="showPetModal = false"><span class="material-symbols-rounded text-[20px]">close</span></button></div><p v-if="!currentClassVipActive" class="mt-4 rounded-xl bg-[#fff7ed] px-4 py-3 text-sm text-[#9a735d]"><span class="material-symbols-rounded mr-1 align-middle text-[18px] text-[#f59e0b]">workspace_premium</span>神兽伙伴需开通灵犀计划（VIP）后才能领养，普通伙伴不受影响。</p><div class="mt-5 grid grid-cols-3 gap-3 sm:grid-cols-5"><button v-for="pet in PET_TYPES" :key="pet.id" type="button" :disabled="isPetAdoptionLocked(pet)" class="relative rounded-2xl border p-2 transition" :class="isPetAdoptionLocked(pet) ? 'cursor-not-allowed border-slate-100 bg-slate-50 opacity-60 grayscale' : 'border-slate-100 hover:border-orange-300 hover:shadow-sm'" @click="selectPet(pet.id)"><span v-if="pet.category === 'mythical'" :class="[BADGE_CLASS, 'absolute right-1.5 top-1.5 z-10 bg-white text-[#ae6b44]']">神兽</span><span v-if="isPetAdoptionLocked(pet)" class="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-slate-900/10"><span class="material-symbols-rounded text-2xl text-slate-500">lock</span></span><img :src="getPetLevel1Image(pet.id)" :alt="pet.name" class="aspect-square w-full object-contain" /><span class="mt-1 block text-sm font-bold" :class="isPetAdoptionLocked(pet) ? 'text-slate-400' : ''">{{ pet.name }}</span></button><button v-if="selectedStudent?.pet_type" type="button" class="rounded-2xl border border-rose-200 bg-rose-50 p-2 transition hover:border-rose-300 hover:shadow-sm" aria-label="取消宠物" @click="removePet"><div class="flex aspect-square w-full items-center justify-center"><span class="material-symbols-rounded text-4xl text-rose-400">heart_minus</span></div><span class="mt-1 block text-sm font-bold text-rose-500">取消宠物</span></button></div></div></div></Transition>
     <Transition>
       <div v-if="showTeacherProfile" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/30 p-4" @click.self="closeTeacherProfile">

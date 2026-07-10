@@ -328,7 +328,7 @@ onMounted(() => {
           <div class="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 class="font-serif text-4xl font-bold tracking-tight text-[#422d20] sm:text-5xl">系统管理</h1>
-              <p class="mt-4 max-w-2xl text-sm leading-7 text-[#806b5b] sm:text-base">
+              <p class="mt-4 whitespace-nowrap text-sm text-[#806b5b] sm:text-base">
                 管理全站注册教师账户，以及全部班级与 VIP 授权状态。
               </p>
             </div>
