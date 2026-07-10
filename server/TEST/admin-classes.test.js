@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { setupTestDb } from './testDb.js'
 
 const DEMO_CLASS_ID = 'demo-class-2026'
+const DAY_MS = 24 * 60 * 60 * 1000
 
 async function listAllClassesWithVip(db) {
   const classes = await db.prepare(`
@@ -83,5 +84,97 @@ describe('管理员班级总览', () => {
     const demo = classes.find(item => item.id === DEMO_CLASS_ID)
     expect(demo?.isDemo).toBe(true)
     expect(demo?.ownerIsGuest).toBe(true)
+  })
+})
+
+async function authorizeClassVipAsAdmin(db, { classId, isVip, expiresAt }) {
+  const classInfo = await db.prepare('SELECT id, name FROM classes WHERE id = ?').get(classId)
+  if (!classInfo) {
+    return { error: '班级不存在', status: 404 }
+  }
+  if (classId === DEMO_CLASS_ID) {
+    return { error: '演示班级不支持 VIP 授权', status: 400 }
+  }
+
+  const now = Date.now()
+  const existing = await db.prepare('SELECT * FROM class_vip_subscriptions WHERE class_id = ?').get(classId)
+
+  if (!isVip) {
+    if (existing) {
+      await db.prepare('DELETE FROM class_vip_subscriptions WHERE class_id = ?').run(classId)
+    }
+    return { success: true, classId, vip: null }
+  }
+
+  const parsedExpiresAt = Number(expiresAt)
+  if (!parsedExpiresAt || Number.isNaN(parsedExpiresAt)) {
+    return { error: '请设置有效的 VIP 到期时间', status: 400 }
+  }
+  if (parsedExpiresAt <= now) {
+    return { error: 'VIP 到期时间必须晚于当前时间', status: 400 }
+  }
+
+  const startedAt = existing?.started_at || now
+  if (existing) {
+    await db.prepare(`
+      UPDATE class_vip_subscriptions
+      SET plan = 'manual', status = 'active', started_at = ?, expires_at = ?, updated_at = ?
+      WHERE class_id = ?
+    `).run(startedAt, parsedExpiresAt, now, classId)
+  } else {
+    await db.prepare(`
+      INSERT INTO class_vip_subscriptions (id, class_id, plan, status, started_at, expires_at, created_at, updated_at)
+      VALUES (?, ?, 'manual', 'active', ?, ?, ?, ?)
+    `).run(uuidv4(), classId, startedAt, parsedExpiresAt, now, now)
+  }
+
+  const vip = await db.prepare('SELECT * FROM class_vip_subscriptions WHERE class_id = ?').get(classId)
+  return { success: true, classId, vip }
+}
+
+describe('管理员 VIP 授权', () => {
+  let db
+
+  beforeEach(async () => {
+    db = await setupTestDb()
+    const now = Date.now()
+    await db.prepare('INSERT INTO users (id, username, password_hash, is_guest, created_at) VALUES (?, ?, ?, ?, ?)')
+      .run('teacher-1', '张老师', 'hash', 0, now)
+    await db.prepare('INSERT INTO classes (id, user_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)')
+      .run('class-a', 'teacher-1', '三年一班', now, now)
+  })
+
+  it('管理员可手动授权班级 VIP 并设置到期时间', async () => {
+    const expiresAt = Date.now() + 30 * DAY_MS
+    const result = await authorizeClassVipAsAdmin(db, {
+      classId: 'class-a',
+      isVip: true,
+      expiresAt,
+    })
+    expect(result.success).toBe(true)
+    expect(result.vip.plan).toBe('manual')
+    expect(result.vip.expires_at).toBe(expiresAt)
+  })
+
+  it('管理员可取消班级 VIP 授权', async () => {
+    const expiresAt = Date.now() + 30 * DAY_MS
+    await authorizeClassVipAsAdmin(db, { classId: 'class-a', isVip: true, expiresAt })
+
+    const result = await authorizeClassVipAsAdmin(db, {
+      classId: 'class-a',
+      isVip: false,
+    })
+    expect(result.success).toBe(true)
+    expect(result.vip).toBeNull()
+  })
+
+  it('手动授权时到期时间必须晚于当前时间', async () => {
+    const result = await authorizeClassVipAsAdmin(db, {
+      classId: 'class-a',
+      isVip: true,
+      expiresAt: Date.now() - DAY_MS,
+    })
+    expect(result.error).toBe('VIP 到期时间必须晚于当前时间')
+    expect(result.status).toBe(400)
   })
 })

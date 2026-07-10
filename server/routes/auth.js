@@ -7,11 +7,12 @@ import { authMiddleware } from '../middleware/auth.js'
 import { sendTeacherRegisterNotice } from '../services/showDocPushService.js'
 import { isValidPhone } from '../utils/phone.js'
 import { markWelcomeVipEligible } from '../utils/welcomeVip.js'
+import { registerRateLimit, loginRateLimit } from '../middleware/rateLimit.js'
 
 const router = Router()
 
 // 注册
-router.post('/register', async (req, res) => {
+router.post('/register', registerRateLimit, async (req, res) => {
   const { username, password } = req.body
 
   if (!username || !password) {
@@ -55,7 +56,7 @@ router.post('/register', async (req, res) => {
 })
 
 // 登录
-router.post('/login', async (req, res) => {
+router.post('/login', loginRateLimit, async (req, res) => {
   const { username, password } = req.body
 
   if (!username || !password) {

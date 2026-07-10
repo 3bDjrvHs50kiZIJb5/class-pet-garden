@@ -87,7 +87,7 @@ watch(() => route.path, () => {
   <div class="min-h-screen bg-[#fffaf5] font-sans text-[#38281f]">
     <header class="sticky top-0 z-40 border-b border-[#f1e5db] bg-[#fffdfb]/95 px-4 py-3 backdrop-blur transition-all duration-300 sm:px-6 lg:hidden" :class="navigationDimmed ? 'opacity-40 grayscale pointer-events-none select-none' : ''">
       <div class="mx-auto flex max-w-7xl items-center justify-between gap-3">
-        <router-link to="/" class="flex min-w-0 items-center gap-2.5">
+        <router-link :to="{ path: '/', query: { landing: '1' } }" class="flex min-w-0 items-center gap-2.5">
           <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#ffe7c8] text-xl text-[#d97706]">🐾</span>
           <span class="min-w-0"><span class="block truncate font-serif text-lg font-bold text-[#422d20]">{{ title }}</span><span class="block truncate text-sm text-[#9a735d]">{{ eyebrow }}</span></span>
         </router-link>
@@ -97,7 +97,7 @@ watch(() => route.path, () => {
 
     <div class="mx-auto flex max-w-[1728px] gap-5 px-3 pb-3 pt-3 lg:px-5 lg:pb-5 lg:pt-5">
       <aside class="sticky top-3 hidden h-[calc(100vh-24px)] w-60 shrink-0 flex-col rounded-[1.75rem] border border-[#f1e5db] bg-[#fffdf9] p-4 shadow-[0_12px_36px_rgba(116,76,45,0.07)] transition-all duration-300 lg:top-5 lg:flex lg:h-[calc(100vh-40px)]" :class="navigationDimmed ? 'opacity-40 grayscale pointer-events-none select-none' : ''">
-        <router-link to="/" class="flex min-w-0 items-center gap-3 px-2 py-2">
+        <router-link :to="{ path: '/', query: { landing: '1' } }" class="flex min-w-0 items-center gap-3 px-2 py-2">
           <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#ffe7c8] text-[#d97706] shadow-sm"><span class="material-symbols-rounded text-[24px]">pets</span></span>
           <span class="min-w-0 flex-1"><span class="block truncate font-serif text-xl font-bold text-[#422d20]">{{ title }}</span><span class="mt-0.5 block truncate text-sm font-semibold leading-none tracking-[0.05em] text-[#b58b70]">{{ eyebrow }}</span></span>
         </router-link>

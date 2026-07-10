@@ -34,6 +34,7 @@ services:
       DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-classpets}
       DB_NAME: ${MYSQL_DATABASE:-classpets}
       DB_CONNECTION_LIMIT: ${DB_CONNECTION_LIMIT:-10}
+      TOKEN_SECRET: ${TOKEN_SECRET:?请在 .env 中配置 TOKEN_SECRET}
       TZ: Asia/Shanghai
     depends_on:
       mysql:

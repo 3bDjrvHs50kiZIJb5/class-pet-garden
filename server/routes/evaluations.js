@@ -6,13 +6,18 @@ import {
   revokeEvaluation,
   EvaluationCooldownError
 } from '../services/evaluationService.js'
+import {
+  assertStudentBelongsToClass,
+  resolveRuleForEvaluation,
+  EvaluationValidationError
+} from '../utils/evaluationValidation.js'
 import { getTodayTimestampRange } from '../utils/dateRange.js'
 
 const router = Router()
 
 // 添加评价
 router.post('/', authMiddleware, async (req, res) => {
-  const { classId, studentId, points, reason, category } = req.body
+  const { classId, studentId, reason } = req.body
 
   const cls = await db.prepare('SELECT * FROM classes WHERE id = ?').get(classId)
   if (!cls || cls.user_id !== req.userId) {
@@ -20,9 +25,20 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 
   try {
-    const result = await applyEvaluation(db, { classId, studentId, points, reason, category })
+    await assertStudentBelongsToClass(db, classId, studentId)
+    const rule = await resolveRuleForEvaluation(db, req.userId, reason)
+    const result = await applyEvaluation(db, {
+      classId,
+      studentId,
+      points: rule.points,
+      reason: rule.name,
+      category: rule.category
+    })
     res.json(result)
   } catch (error) {
+    if (error instanceof EvaluationValidationError) {
+      return res.status(error.statusCode).json({ error: error.message })
+    }
     if (error instanceof EvaluationCooldownError) {
       return res.status(429).json({
         error: error.message,

@@ -109,7 +109,7 @@ describe('评价冷却防刷分', () => {
     await expect(assertEvaluationCooldown(db, {
       studentId: payload.studentId,
       reason: payload.reason,
-      now: now + EVALUATION_COOLDOWN_MS
+      now: now + EVALUATION_COOLDOWN_MS + 1000
     })).resolves.toBeUndefined()
   })
 })

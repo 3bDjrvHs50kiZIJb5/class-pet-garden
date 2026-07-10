@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, onBeforeRouteUpdate, type LocationQuery, type LocationQueryRaw } from 'vue-router'
 import { PET_TYPES, getPetType, getLevelProgress, calculateLevel, getPetLevelImage, getPetLevel1Image, isMythicalPet, type PetType } from '@/data/pets'
 import PetImage from '@/components/PetImage.vue'
 import AppShell from '@/components/AppShell.vue'
@@ -120,6 +120,28 @@ function isPetAdoptionLocked(pet: PetType) {
 
 function enterGarden() {
   showLanding.value = false
+}
+
+function wantsLandingPage(query: LocationQuery) {
+  return query.landing === '1'
+}
+
+function applyLandingPage() {
+  showLanding.value = true
+  isDemoMode.value = false
+}
+
+function openLandingFromQuery(query: LocationQuery, path: string) {
+  if (!wantsLandingPage(query)) return false
+  applyLandingPage()
+  const nextQuery: LocationQueryRaw = {}
+  for (const [key, value] of Object.entries(query)) {
+    if (key !== 'landing') {
+      nextQuery[key] = value
+    }
+  }
+  router.replace({ path, query: nextQuery })
+  return true
 }
 
 function formatProfileDate(timestamp?: number) {
@@ -1343,11 +1365,18 @@ async function handleStudentsImported(event?: Event) {
   await loadStudents()
 }
 
+onBeforeRouteUpdate((to) => {
+  openLandingFromQuery(to.query, to.path)
+})
+
 onMounted(async () => {
   window.addEventListener(STUDENTS_IMPORTED_EVENT, handleStudentsImported)
   window.addEventListener('click', handleDocumentClick)
   isLoading.value = true
   try {
+    if (openLandingFromQuery(route.query, route.path)) {
+      return
+    }
     const wantsDemo = route.query.demo === '1'
     if (wantsDemo) {
       const studentId = route.query.studentId

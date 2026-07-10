@@ -1,5 +1,4 @@
 import { Router } from 'express'
-import { v4 as uuidv4 } from 'uuid'
 import { db } from '../db.js'
 import { authMiddleware } from '../middleware/auth.js'
 
@@ -84,20 +83,6 @@ export function normalizeVipRow(row) {
   }
 }
 
-async function assertClassOwnership(classId, userId) {
-  const classInfo = await db.prepare('SELECT id, name, user_id FROM classes WHERE id = ?').get(classId)
-  if (!classInfo) {
-    return { error: '班级不存在', status: 404 }
-  }
-  if (classInfo.user_id !== userId) {
-    return { error: '无权操作此班级', status: 403 }
-  }
-  if (classId === DEMO_CLASS_ID) {
-    return { error: '演示班级不支持开通会员', status: 400 }
-  }
-  return { classInfo }
-}
-
 // 获取当前老师所有班级的会员状态
 router.get('/', authMiddleware, async (req, res) => {
   const classes = await db.prepare(`
@@ -140,122 +125,6 @@ router.get('/', authMiddleware, async (req, res) => {
       activeVipCount: activeCount,
       inactiveCount: enrichedClasses.length - activeCount,
     },
-  })
-})
-
-// 模拟开通 / 续费班级会员（后续可对接真实支付）
-router.post('/subscribe', authMiddleware, async (req, res) => {
-  const { classId, plan } = req.body
-  if (!classId || !plan) {
-    return res.status(400).json({ error: '请选择班级和会员方案' })
-  }
-  if (!VIP_PLANS[plan] || !PUBLIC_VIP_PLAN_IDS.includes(plan)) {
-    return res.status(400).json({ error: '无效的会员方案' })
-  }
-
-  const ownership = await assertClassOwnership(classId, req.userId)
-  if (ownership.error) {
-    return res.status(ownership.status).json({ error: ownership.error })
-  }
-
-  const now = Date.now()
-  const planInfo = VIP_PLANS[plan]
-  const existing = await db.prepare('SELECT * FROM class_vip_subscriptions WHERE class_id = ?').get(classId)
-
-  let startedAt = now
-  let expiresAt = now + planInfo.days * 24 * 60 * 60 * 1000
-
-  if (existing && existing.expires_at > now) {
-    startedAt = existing.started_at
-    expiresAt = existing.expires_at + planInfo.days * 24 * 60 * 60 * 1000
-  }
-
-  if (existing) {
-    await db.prepare(`
-      UPDATE class_vip_subscriptions
-      SET plan = ?, status = 'active', started_at = ?, expires_at = ?, updated_at = ?
-      WHERE class_id = ?
-    `).run(plan, startedAt, expiresAt, now, classId)
-  } else {
-    await db.prepare(`
-      INSERT INTO class_vip_subscriptions (id, class_id, plan, status, started_at, expires_at, created_at, updated_at)
-      VALUES (?, ?, ?, 'active', ?, ?, ?, ?)
-    `).run(uuidv4(), classId, plan, startedAt, expiresAt, now, now)
-  }
-
-  const vip = normalizeVipRow(
-    await db.prepare('SELECT * FROM class_vip_subscriptions WHERE class_id = ?').get(classId)
-  )
-
-  res.json({
-    success: true,
-    classId,
-    className: ownership.classInfo.name,
-    vip,
-    message: existing ? '续费成功' : '开通成功',
-  })
-})
-
-// 手动授权 / 取消班级 VIP
-router.put('/authorize', authMiddleware, async (req, res) => {
-  const { classId, isVip, expiresAt } = req.body
-  if (!classId) {
-    return res.status(400).json({ error: '请选择班级' })
-  }
-
-  const ownership = await assertClassOwnership(classId, req.userId)
-  if (ownership.error) {
-    return res.status(ownership.status).json({ error: ownership.error })
-  }
-
-  const now = Date.now()
-  const existing = await db.prepare('SELECT * FROM class_vip_subscriptions WHERE class_id = ?').get(classId)
-
-  if (!isVip) {
-    if (existing) {
-      await db.prepare('DELETE FROM class_vip_subscriptions WHERE class_id = ?').run(classId)
-    }
-    return res.json({
-      success: true,
-      classId,
-      className: ownership.classInfo.name,
-      vip: null,
-      message: '已取消 VIP 授权',
-    })
-  }
-
-  const parsedExpiresAt = Number(expiresAt)
-  if (!parsedExpiresAt || Number.isNaN(parsedExpiresAt)) {
-    return res.status(400).json({ error: '请设置有效的 VIP 到期时间' })
-  }
-  if (parsedExpiresAt <= now) {
-    return res.status(400).json({ error: 'VIP 到期时间必须晚于当前时间' })
-  }
-
-  const startedAt = existing?.started_at || now
-  if (existing) {
-    await db.prepare(`
-      UPDATE class_vip_subscriptions
-      SET plan = 'manual', status = 'active', started_at = ?, expires_at = ?, updated_at = ?
-      WHERE class_id = ?
-    `).run(startedAt, parsedExpiresAt, now, classId)
-  } else {
-    await db.prepare(`
-      INSERT INTO class_vip_subscriptions (id, class_id, plan, status, started_at, expires_at, created_at, updated_at)
-      VALUES (?, ?, 'manual', 'active', ?, ?, ?, ?)
-    `).run(uuidv4(), classId, startedAt, parsedExpiresAt, now, now)
-  }
-
-  const vip = normalizeVipRow(
-    await db.prepare('SELECT * FROM class_vip_subscriptions WHERE class_id = ?').get(classId)
-  )
-
-  res.json({
-    success: true,
-    classId,
-    className: ownership.classInfo.name,
-    vip,
-    message: 'VIP 授权已保存',
   })
 })
 

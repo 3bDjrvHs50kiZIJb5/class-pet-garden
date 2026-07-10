@@ -91,11 +91,12 @@ function registerFrontendRoutes() {
 }
 
 // Middleware
+app.set('trust proxy', 1)
 app.use(cors())
 app.use(express.json())
 
 const ADMIN_USERNAME = 'admin'
-const ADMIN_DEFAULT_PASSWORD = 'admin!@#$'
+const ADMIN_DEFAULT_PASSWORD = process.env.ADMIN_DEFAULT_PASSWORD || 'admin!@#$'
 
 // 初始化默认评价规则
 async function initDefaultRules() {
@@ -231,8 +232,6 @@ async function bootstrap() {
         .run(adminId, ADMIN_USERNAME, adminPasswordHash, 0, Date.now())
       console.log(`✅ 创建管理员账户 ${ADMIN_USERNAME}`)
     }
-  } else {
-    await db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(adminPasswordHash, adminUser.id)
   }
 
   // 迁移现有班级到游客用户

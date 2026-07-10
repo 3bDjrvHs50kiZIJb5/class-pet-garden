@@ -34,6 +34,14 @@ export async function assertEvaluationCooldown(db, { studentId, reason, now = Da
  * 写入评价记录并更新学生积分与宠物成长
  */
 export async function applyEvaluation(db, { classId, studentId, points, reason, category }) {
+  const student = await db.prepare('SELECT * FROM students WHERE id = ?').get(studentId)
+  if (!student) {
+    throw new Error('学生不存在')
+  }
+  if (student.class_id !== classId) {
+    throw new Error('学生不属于该班级')
+  }
+
   const id = uuidv4()
   const now = Date.now()
 
@@ -45,7 +53,6 @@ export async function applyEvaluation(db, { classId, studentId, points, reason, 
 
   await db.prepare('UPDATE students SET total_points = total_points + ? WHERE id = ?').run(points, studentId)
 
-  const student = await db.prepare('SELECT * FROM students WHERE id = ?').get(studentId)
   const result = {
     id,
     timestamp: now,
