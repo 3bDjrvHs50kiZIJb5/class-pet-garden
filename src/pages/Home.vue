@@ -819,6 +819,10 @@ async function loadRules() {
 }
 
 async function createClass() {
+  if (isGuest.value) {
+    toast.warning('游客无法创建班级，请先注册教师账号')
+    return
+  }
   if (!newClassName.value.trim()) {
     toast.warning('请输入班级名称')
     return
@@ -833,13 +837,18 @@ async function createClass() {
     } else {
       toast.success('班级创建成功！')
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('创建班级失败:', error)
-    toast.error('创建班级失败，请重试')
+    const message = (error as { response?: { data?: { error?: string } } })?.response?.data?.error
+    toast.error(message || '创建班级失败，请重试')
   }
 }
 
 async function updateClass() {
+  if (isGuest.value) {
+    toast.warning('游客无法编辑班级，请先注册教师账号')
+    return
+  }
   if (!newClassName.value.trim()) {
     toast.warning('请输入班级名称')
     return

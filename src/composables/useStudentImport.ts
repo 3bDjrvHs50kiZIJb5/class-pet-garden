@@ -22,8 +22,10 @@ export function setCurrentClassStudentCount(count: number | null) {
   currentClassStudentCount.value = count
 }
 
+const GUEST_CANNOT_CREATE_CLASS = '游客无法创建班级，请先注册教师账号'
+
 export function useStudentImport() {
-  const { api, user } = useAuth()
+  const { api, user, isGuest } = useAuth()
 
   const showImportStudents = computed(() => currentClassStudentCount.value === 0)
 
@@ -116,6 +118,10 @@ export function useStudentImport() {
   }
 
   async function createClassInImport() {
+    if (isGuest.value) {
+      toast.warning(GUEST_CANNOT_CREATE_CLASS)
+      return
+    }
     if (!newImportClassName.value.trim()) {
       toast.warning('请输入班级名称')
       return
@@ -135,9 +141,10 @@ export function useStudentImport() {
         toast.success('班级创建成功')
       }
       notifyClassesChanged(res.data.id, 0)
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('创建班级失败:', error)
-      toast.error('创建班级失败，请重试')
+      const message = (error as { response?: { data?: { error?: string } } })?.response?.data?.error
+      toast.error(message || '创建班级失败，请重试')
     } finally {
       creatingClass.value = false
     }

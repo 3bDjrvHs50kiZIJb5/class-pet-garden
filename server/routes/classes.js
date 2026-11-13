@@ -59,6 +59,11 @@ router.get('/:classId/students', authMiddleware, async (req, res) => {
 // 创建班级（关联当前用户）
 router.post('/', authMiddleware, async (req, res) => {
   const { name } = req.body
+  const user = await db.prepare('SELECT is_guest FROM users WHERE id = ?').get(req.userId)
+  if (user?.is_guest) {
+    return res.status(403).json({ error: '游客无法创建班级，请先注册教师账号' })
+  }
+
   const id = uuidv4()
   const now = Date.now()
 
