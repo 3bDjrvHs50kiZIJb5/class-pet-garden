@@ -229,6 +229,7 @@ async function enterDemoGarden() {
     setCurrentClassStudentCount(students.value.length)
     applyStudentSort()
     saveCurrentClassId(demoClass.id, user.value?.id)
+    syncDemoModeFromCurrentClass()
     evaluationRecords.value = res.data.records || []
     totalRecords.value = res.data.total || evaluationRecords.value.length
     todayEvaluationCount.value = evaluationRecords.value.length
@@ -304,9 +305,17 @@ function toggleSortMenu() {
   showSortMenu.value = !showSortMenu.value
 }
 
-const classSwitcherInteractive = computed(
-  () => classes.value.length > 1 || isDemoMode.value,
+const isViewingDemoClass = computed(
+  () => currentClass.value?.id === DEMO_CLASS_ID,
 )
+
+const classSwitcherInteractive = computed(
+  () => classes.value.length > 1 || isViewingDemoClass.value || isDemoMode.value,
+)
+
+function syncDemoModeFromCurrentClass() {
+  isDemoMode.value = isViewingDemoClass.value
+}
 
 function toggleClassMenu() {
   if (!classSwitcherInteractive.value) return
@@ -710,8 +719,7 @@ function closeAddModal() {
 // API calls
 async function loadClasses() {
   try {
-    const res = await api.get('/classes')
-    classes.value = res.data.classes
+    await refreshClassSwitcherOptions()
     if (classes.value.length > 0) {
       const savedClassId = getSavedClassId(user.value?.id)
       const savedClass = savedClassId ? classes.value.find(c => c.id === savedClassId) : null
@@ -732,8 +740,8 @@ async function loadClasses() {
 }
 
 async function selectClass(cls: Class) {
-  isDemoMode.value = cls.id === DEMO_CLASS_ID
   currentClass.value = cls
+  isDemoMode.value = cls.id === DEMO_CLASS_ID
   showAllStudents.value = false
   saveCurrentClassId(cls.id, user.value?.id)
   await loadStudents(true)
@@ -1415,7 +1423,7 @@ onMounted(async () => {
       await openStudentFromQuery()
       return
     }
-    if (isGuest.value && getSavedClassId(user.value?.id) === DEMO_CLASS_ID) {
+    if (getSavedClassId(user.value?.id) === DEMO_CLASS_ID) {
       await enterDemoGarden()
       await openStudentFromQuery()
       return
@@ -1566,7 +1574,7 @@ onUnmounted(() => {
                   >演示</span>
                   <span v-if="cls.id === currentClass.id" class="material-symbols-rounded text-[16px] text-[#d97706]">check</span>
                 </button>
-                <div v-if="isDemoMode && isGuest" class="border-t border-[#f1e5db] px-2 pb-1 pt-1">
+                <div v-if="isViewingDemoClass && isGuest" class="border-t border-[#f1e5db] px-2 pb-1 pt-1">
                   <button
                     type="button"
                     class="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-[#765f50] transition hover:bg-[#fff7f1]"
