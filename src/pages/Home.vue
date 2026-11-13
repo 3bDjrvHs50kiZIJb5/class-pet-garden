@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted, computed, nextTick, defineAsyncComponent }
 import { useRoute, useRouter, onBeforeRouteUpdate, type LocationQuery, type LocationQueryRaw } from 'vue-router'
 import { PET_TYPES, getPetType, getLevelProgress, calculateLevel, getPetLevelImage, getPetLevel1Image, isMythicalPet, type PetType } from '@/data/pets'
 import PetImage from '@/components/PetImage.vue'
-import AppShell from '@/components/AppShell.vue'
+const AppShell = defineAsyncComponent(() => import('@/components/AppShell.vue'))
 const GrowthAreaChart = defineAsyncComponent(() => import('@/components/GrowthAreaChart.vue'))
 const ConfirmDialog = defineAsyncComponent(() => import('@/components/ConfirmDialog.vue'))
 const BgmTrackPicker = defineAsyncComponent(() => import('@/components/BgmTrackPicker.vue'))
@@ -217,14 +217,23 @@ function requestConfigForCurrentClass() {
     : undefined
 }
 
+async function enterDemoGardenWithLoading() {
+  prefetchDemoGarden()
+  await enterDemoGarden()
+}
+
 async function enterDemoGarden() {
   try {
-    const res = await api.get('/classes/demo', { headers: { Authorization: 'Bearer guest' } })
+    const pending = demoGardenPrefetch
+    demoGardenPrefetch = null
+    const res = await (pending ?? api.get<DemoGardenPayload>('/classes/demo', {
+      headers: { Authorization: 'Bearer guest' },
+    }))
     const demoClass = res.data.class as Class
     isDemoMode.value = true
     showAllStudents.value = false
-    await refreshClassSwitcherOptions()
     currentClass.value = demoClass
+    classes.value = [demoClass]
     students.value = res.data.students || []
     setCurrentClassStudentCount(students.value.length)
     applyStudentSort()
@@ -234,10 +243,13 @@ async function enterDemoGarden() {
     totalRecords.value = res.data.total || evaluationRecords.value.length
     todayEvaluationCount.value = evaluationRecords.value.length
     enterGarden()
+    isLoading.value = false
+    void refreshClassSwitcherOptions()
     void loadClassDashboardExtras()
   } catch (error) {
     console.error('加载演示班级失败:', error)
     toast.error('演示班级暂时无法加载，请稍后重试')
+    isLoading.value = false
   }
 }
 
@@ -283,7 +295,30 @@ const levelUpPhase = ref<'show-prev' | 'transition' | 'show-current'>('show-prev
 const showLevelUpAnimation = ref(false)
 const levelUpInfo = ref({ name: '', level: 0, petType: '', prevLevel: 0 })
 const isLoaded = ref(false)
-const isLoading = ref(true)
+const isLoading = ref(false)
+
+interface DemoGardenPayload {
+  class: Class
+  students: Student[]
+  records?: EvaluationRecord[]
+  total?: number
+}
+
+interface EvaluationRecord {
+  id: string
+  points: number
+  reason?: string
+  timestamp?: number
+}
+
+let demoGardenPrefetch: Promise<{ data: DemoGardenPayload }> | null = null
+
+function prefetchDemoGarden() {
+  if (demoGardenPrefetch) return
+  demoGardenPrefetch = api.get<DemoGardenPayload>('/classes/demo', {
+    headers: { Authorization: 'Bearer guest' },
+  })
+}
 
 // 图片加载状态
 const imageLoaded = ref<Record<string, boolean>>({})
@@ -739,7 +774,12 @@ function closeAddModal() {
 // API calls
 async function loadClasses() {
   try {
-    await refreshClassSwitcherOptions()
+    if (isDemoMode.value) {
+      await refreshClassSwitcherOptions()
+    } else {
+      const res = await api.get('/classes')
+      classes.value = (res.data.classes || []).filter((cls: Class) => cls.id !== DEMO_CLASS_ID)
+    }
     if (classes.value.length > 0) {
       const savedClassId = resolveSavedClassIdForAccount()
       const savedClass = savedClassId ? classes.value.find(c => c.id === savedClassId) : null
@@ -765,7 +805,8 @@ async function selectClass(cls: Class) {
   showAllStudents.value = false
   persistCurrentClassId(cls.id)
   await loadStudents(true)
-  await refreshClassSwitcherOptions()
+  isLoading.value = false
+  void refreshClassSwitcherOptions()
   void loadClassDashboardExtras()
 }
 
@@ -1437,13 +1478,13 @@ onBeforeRouteUpdate((to) => {
 onMounted(async () => {
   window.addEventListener(STUDENTS_IMPORTED_EVENT, handleStudentsImported)
   window.addEventListener('click', handleDocumentClick)
-  isLoading.value = true
   try {
     if (openLandingFromQuery(route.query, route.path)) {
       return
     }
     const wantsDemo = route.query.demo === '1'
     if (wantsDemo) {
+      isLoading.value = true
       const studentId = route.query.studentId
       router.replace({
         path: route.path,
@@ -1454,6 +1495,7 @@ onMounted(async () => {
       return
     }
     if (isGuest.value && getSavedClassId(user.value?.id) === DEMO_CLASS_ID) {
+      isLoading.value = true
       await enterDemoGarden()
       await openStudentFromQuery()
       return
@@ -1461,9 +1503,10 @@ onMounted(async () => {
     const shouldLand = await shouldShowLanding()
     showLanding.value = shouldLand
     if (shouldLand) {
-      isLoading.value = false
+      prefetchDemoGarden()
       return
     }
+    isLoading.value = true
     await loadClasses()
     await openStudentFromQuery()
   } finally {
@@ -1483,7 +1526,7 @@ onUnmounted(() => {
 <template>
   <div class="min-h-screen bg-[#fffdfb] font-sans text-slate-800">
     <Transition>
-      <div v-if="isLoading" class="fixed inset-0 z-[200] flex items-center justify-center bg-[#fffaf5]">
+      <div v-if="isLoading && !showLanding" class="fixed inset-0 z-[200] flex items-center justify-center bg-[#fffaf5]">
         <div class="text-center">
           <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-[24px] bg-orange-100 text-3xl shadow-sm">🐾</div>
           <p class="mt-4 text-sm font-semibold text-slate-600">正在打开班级宠物园</p>
@@ -1502,7 +1545,7 @@ onUnmounted(() => {
             <h1 class="mt-[22px] max-w-[820px] font-serif text-5xl font-bold leading-[0.98] text-[#1a1a1a] sm:text-[68px]">{{ landingHeadline }}</h1>
             <p class="mt-[22px] max-w-[660px] text-base leading-[1.45] text-[#666] sm:text-xl">老师快速加分，学生的宠物随习惯一起升级。</p>
             <div class="mt-[22px] flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <button type="button" class="font-brand h-12 rounded-full bg-[#ff5c00] px-8 text-[15px] font-bold text-white shadow-[0_16px_40px_rgba(0,0,0,0.07)] transition hover:bg-[#e95300]" @click="enterDemoGarden">进入演示班级</button>
+              <button type="button" class="font-brand h-12 rounded-full bg-[#ff5c00] px-8 text-[15px] font-bold text-white shadow-[0_16px_40px_rgba(0,0,0,0.07)] transition hover:bg-[#e95300]" @mouseenter="prefetchDemoGarden" @focus="prefetchDemoGarden" @click="enterDemoGardenWithLoading">进入演示班级</button>
               <router-link to="/register" class="font-brand inline-flex h-12 items-center rounded-full border border-[#ff5c00] bg-white px-8 text-[15px] font-bold text-[#ff5c00] transition hover:bg-[#fff3ec]">我是老师，创建新班级</router-link>
             </div>
             <div class="mt-[22px] flex h-[86px] w-full max-w-[420px] items-center justify-center gap-[18px] rounded-xl border border-[#f3f4f6] bg-white px-[18px] py-[14px] text-left shadow-[0_16px_40px_rgba(0,0,0,0.07)]">
