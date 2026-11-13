@@ -310,7 +310,7 @@ onMounted(async () => {
 
           <div v-if="!classes.length" class="mt-5 rounded-2xl bg-[#fff8f2] px-5 py-14 text-center">
             <p class="text-sm font-medium text-[#75533d]">还没有班级，无法查看喂养记录</p>
-            <router-link to="/" class="mt-3 inline-flex text-sm font-semibold text-orange-600 hover:text-orange-700">前往工作台创建班级</router-link>
+            <router-link to="/dashboard" class="mt-3 inline-flex text-sm font-semibold text-orange-600 hover:text-orange-700">前往工作台创建班级</router-link>
           </div>
 
           <div v-else-if="loading" class="mt-5 rounded-2xl bg-[#fff8f2] px-5 py-14 text-center text-sm text-[#a1836d]">加载中…</div>

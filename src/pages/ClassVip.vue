@@ -248,7 +248,7 @@ onMounted(loadOverview)
             <div v-else-if="!classes.length" class="mt-4 rounded-2xl bg-[#fff8f2] px-5 py-14 text-center">
               <span class="material-symbols-rounded text-[40px] text-[#e8c9ae]">school</span>
               <p class="mt-3 text-sm font-medium text-[#75533d]">还没有班级，无法开通会员</p>
-              <router-link to="/" class="mt-3 inline-flex text-sm font-semibold text-orange-600 hover:text-orange-700">前往工作台创建班级</router-link>
+              <router-link to="/dashboard" class="mt-3 inline-flex text-sm font-semibold text-orange-600 hover:text-orange-700">前往工作台创建班级</router-link>
             </div>
 
             <div v-else class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">

@@ -26,7 +26,7 @@ const features = [
 
 onMounted(() => {
   if (!isGuest.value) {
-    router.replace('/')
+    router.replace('/dashboard')
   }
 })
 
@@ -72,7 +72,7 @@ async function submitRegister() {
       setUser(res.data.user, res.data.token)
       const welcomeMessage = res.data.welcomeVip?.message
       toast.success(welcomeMessage ? `注册成功！${welcomeMessage}` : '注册成功，欢迎加入班级宠物园！')
-      router.replace('/')
+      router.replace('/dashboard')
     }
   } catch (err: any) {
     error.value = err.response?.data?.error || '注册失败，请重试'

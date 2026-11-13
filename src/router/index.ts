@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { ADMIN_USERNAME } from '@/composables/useAuth'
-import Home from '@/pages/Home.vue'
+import { prefetchDemoGarden } from '@/utils/demoPrefetch'
 import PetPreview from '@/pages/PetPreview.vue'
 import EvaluationRules from '@/pages/EvaluationRules.vue'
 import FeedingRecords from '@/pages/FeedingRecords.vue'
@@ -15,7 +15,8 @@ import StudentShare from '@/pages/StudentShare.vue'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', alias: '/pet-garden/', name: 'home', component: Home },
+    { path: '/', alias: '/pet-garden/', name: 'home', component: () => import('@/pages/LandingPage.vue') },
+    { path: '/dashboard', alias: '/pet-garden/dashboard', name: 'dashboard', component: () => import('@/pages/Home.vue') },
     { path: '/preview', alias: '/pet-garden/preview', name: 'preview', component: PetPreview },
     { path: '/rules', alias: '/pet-garden/rules', name: 'rules', component: EvaluationRules },
     { path: '/records', alias: '/pet-garden/records', name: 'records', component: FeedingRecords },
@@ -41,11 +42,14 @@ function isAdminUser() {
 }
 
 router.beforeEach((to) => {
-  if (to.name === 'home' && typeof to.query.studentId === 'string' && to.query.studentId) {
+  if (to.name === 'dashboard') {
+    prefetchDemoGarden()
+  }
+  if ((to.name === 'home' || to.name === 'dashboard') && typeof to.query.studentId === 'string' && to.query.studentId) {
     return { name: 'student-share', params: { studentId: to.query.studentId } }
   }
   if (to.name === 'manage' && !isAdminUser()) {
-    return { name: 'home' }
+    return { name: 'dashboard' }
   }
 })
 

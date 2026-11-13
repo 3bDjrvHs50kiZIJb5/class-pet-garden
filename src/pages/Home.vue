@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
-import { useRoute, useRouter, onBeforeRouteUpdate, type LocationQuery, type LocationQueryRaw } from 'vue-router'
+import { ref, onMounted, onUnmounted, computed, nextTick, defineAsyncComponent } from 'vue'
+import { useRoute, useRouter, onBeforeRouteUpdate, type LocationQueryRaw } from 'vue-router'
 import { PET_TYPES, getPetType, getLevelProgress, calculateLevel, getPetLevelImage, getPetLevel1Image, isMythicalPet, type PetType } from '@/data/pets'
 import PetImage from '@/components/PetImage.vue'
 import AppShell from '@/components/AppShell.vue'
-import GrowthAreaChart from '@/components/GrowthAreaChart.vue'
-import ConfirmDialog from '@/components/ConfirmDialog.vue'
-import BgmTrackPicker from '@/components/BgmTrackPicker.vue'
-import RankListRow from '@/components/ranking/RankListRow.vue'
+import { prefetchDemoGarden, takeDemoGardenPrefetch, type DemoGardenPayload } from '@/utils/demoPrefetch'
+const GrowthAreaChart = defineAsyncComponent(() => import('@/components/GrowthAreaChart.vue'))
+const ConfirmDialog = defineAsyncComponent(() => import('@/components/ConfirmDialog.vue'))
+const BgmTrackPicker = defineAsyncComponent(() => import('@/components/BgmTrackPicker.vue'))
+const RankListRow = defineAsyncComponent(() => import('@/components/ranking/RankListRow.vue'))
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
-import { useLandingGate } from '@/composables/useLandingGate'
 import { useStudentImport, STUDENTS_IMPORTED_EVENT, setCurrentClassStudentCount } from '@/composables/useStudentImport'
 import { getSavedClassId, saveCurrentClassId, useClassVip } from '@/composables/useClassVip'
 import { sortRanking } from '@/utils/ranking'
@@ -46,7 +46,6 @@ const toast = useToast()
 
 // 用户认证
 const { isGuest, username, logout, api, user } = useAuth()
-const { shouldShowLanding } = useLandingGate()
 const route = useRoute()
 const router = useRouter()
 
@@ -82,7 +81,7 @@ const newStudentNo = ref('')
 const selectedStudent = ref<Student | null>(null)
 const evaluationRecords = ref<any[]>([])
 const todayEvaluationCount = ref(0)
-const weeklyChartRecords = ref<any[]>([])
+const weeklyGrowthSeries = ref<number[]>([0, 0, 0, 0, 0, 0, 0])
 const selectedEvalTab = ref('学习')
 const stampMode = ref(false)
 const activeStampRule = ref<Rule | null>(null)
@@ -104,19 +103,9 @@ const showAllStudents = ref(false)
 const studentViewMode = ref<'grid' | 'list'>('grid')
 const cardEvalFilterPositive = ref<boolean | null>(null)
 const isRefreshing = ref(false)
-const showLanding = ref(true)
 const isDemoMode = ref(false)
 const DEMO_CLASS_ID = 'demo-class-2026'
-
-const LANDING_HEADLINES = [
-  '孩子的专属宠物，言行驱动成长。',
-  '老师轻点评分，学生宠物同步成长。',
-  '一声表扬，一只宠物，一份看得见的成长。',
-] as const
-
-const landingHeadline = ref(
-  LANDING_HEADLINES[Math.floor(Math.random() * LANDING_HEADLINES.length)]!,
-)
+const workbenchBooting = ref(true)
 
 interface ActiveTaskSummary {
   id: string
@@ -132,30 +121,14 @@ function isPetAdoptionLocked(pet: PetType) {
   return isMythicalPet(pet.id) && !currentClassVipActive.value
 }
 
-function enterGarden() {
-  showLanding.value = false
-}
-
-function wantsLandingPage(query: LocationQuery) {
-  return query.landing === '1'
-}
-
-function applyLandingPage() {
-  showLanding.value = true
-  isDemoMode.value = false
-}
-
-function openLandingFromQuery(query: LocationQuery, path: string) {
-  if (!wantsLandingPage(query)) return false
-  applyLandingPage()
-  const nextQuery: LocationQueryRaw = {}
-  for (const [key, value] of Object.entries(query)) {
-    if (key !== 'landing') {
-      nextQuery[key] = value
-    }
+function stripDemoQueryFromRoute() {
+  if (route.query.demo !== '1') return
+  const query: LocationQueryRaw = {}
+  const studentId = route.query.studentId
+  if (typeof studentId === 'string' && studentId) {
+    query.studentId = studentId
   }
-  router.replace({ path, query: nextQuery })
-  return true
+  router.replace({ name: 'dashboard', query })
 }
 
 function formatProfileDate(timestamp?: number) {
@@ -219,34 +192,27 @@ function requestConfigForCurrentClass() {
 
 async function enterDemoGarden() {
   try {
-    const res = await api.get('/classes/demo', { headers: { Authorization: 'Bearer guest' } })
+    prefetchDemoGarden()
+    const pending = takeDemoGardenPrefetch()
+    const res = await (pending ?? api.get<DemoGardenPayload>('/classes/demo', {
+      headers: { Authorization: 'Bearer guest' },
+    }))
     const demoClass = res.data.class as Class
     isDemoMode.value = true
     showAllStudents.value = false
-    classes.value = [demoClass, ...classes.value.filter(cls => cls.id !== demoClass.id)]
     currentClass.value = demoClass
-    students.value = res.data.students || []
+    classes.value = [demoClass]
+    students.value = (res.data.students || []) as Student[]
     setCurrentClassStudentCount(students.value.length)
     applyStudentSort()
-    saveCurrentClassId(demoClass.id, user.value?.id)
-    evaluationRecords.value = res.data.records || []
+    persistCurrentClassId(demoClass.id)
+    syncDemoModeFromCurrentClass()
+    evaluationRecords.value = (res.data.records || []) as EvaluationRecord[]
     totalRecords.value = res.data.total || evaluationRecords.value.length
     todayEvaluationCount.value = evaluationRecords.value.length
-    enterGarden()
-    const [rulesResult, recordsResult, chartResult] = await Promise.allSettled([
-      loadRules(),
-      loadEvaluationRecords(),
-      loadWeeklyChartRecords()
-    ])
-    if (rulesResult.status === 'rejected') {
-      console.error('加载演示规则失败:', rulesResult.reason)
-    }
-    if (recordsResult.status === 'rejected') {
-      console.error('加载演示评价记录失败:', recordsResult.reason)
-    }
-    if (chartResult.status === 'rejected') {
-      console.error('加载演示周趋势失败:', chartResult.reason)
-    }
+    stripDemoQueryFromRoute()
+    void refreshClassSwitcherOptions()
+    void loadClassDashboardExtras()
   } catch (error) {
     console.error('加载演示班级失败:', error)
     toast.error('演示班级暂时无法加载，请稍后重试')
@@ -295,7 +261,13 @@ const levelUpPhase = ref<'show-prev' | 'transition' | 'show-current'>('show-prev
 const showLevelUpAnimation = ref(false)
 const levelUpInfo = ref({ name: '', level: 0, petType: '', prevLevel: 0 })
 const isLoaded = ref(false)
-const isLoading = ref(true)
+
+interface EvaluationRecord {
+  id: string
+  points: number
+  reason?: string
+  timestamp?: number
+}
 
 // 图片加载状态
 const imageLoaded = ref<Record<string, boolean>>({})
@@ -317,9 +289,78 @@ function toggleSortMenu() {
   showSortMenu.value = !showSortMenu.value
 }
 
+const isViewingDemoClass = computed(
+  () => currentClass.value?.id === DEMO_CLASS_ID,
+)
+
+const classSwitcherInteractive = computed(
+  () => classes.value.length > 1 || isViewingDemoClass.value || isDemoMode.value,
+)
+
+function syncDemoModeFromCurrentClass() {
+  isDemoMode.value = isViewingDemoClass.value
+}
+
 function toggleClassMenu() {
-  if (classes.value.length <= 1) return
+  if (!classSwitcherInteractive.value) return
   showClassMenu.value = !showClassMenu.value
+}
+
+async function refreshClassSwitcherOptions() {
+  const merged = new Map<string, Class>()
+
+  try {
+    const res = await api.get('/classes')
+    for (const cls of res.data.classes || []) {
+      if (cls.id !== DEMO_CLASS_ID) {
+        merged.set(cls.id, cls)
+      }
+    }
+  } catch (error) {
+    console.error('加载班级列表失败:', error)
+  }
+
+  if (isDemoMode.value) {
+    try {
+      const demoRes = await api.get('/classes/demo', { headers: { Authorization: 'Bearer guest' } })
+      const demoClass = demoRes.data.class as Class
+      merged.set(demoClass.id, demoClass)
+    } catch (error) {
+      console.error('加载演示班级信息失败:', error)
+    }
+  }
+
+  classes.value = Array.from(merged.values()).sort((a, b) => {
+    if (a.id === DEMO_CLASS_ID) return -1
+    if (b.id === DEMO_CLASS_ID) return 1
+    return (b.created_at || 0) - (a.created_at || 0)
+  })
+}
+
+function persistCurrentClassId(classId: string) {
+  if (!isGuest.value && classId === DEMO_CLASS_ID) {
+    return
+  }
+  saveCurrentClassId(classId, user.value?.id)
+}
+
+function resolveSavedClassIdForAccount() {
+  const savedClassId = getSavedClassId(user.value?.id)
+  if (!savedClassId) return null
+  if (!isGuest.value && savedClassId === DEMO_CLASS_ID) {
+    return null
+  }
+  return savedClassId
+}
+
+function exitDemoToLanding() {
+  closeClassMenu()
+  isDemoMode.value = false
+  currentClass.value = null
+  students.value = []
+  classes.value = []
+  setCurrentClassStudentCount(null)
+  router.push({ path: '/', query: { landing: '1' } })
 }
 
 function closeClassMenu() {
@@ -583,36 +624,9 @@ const collectionProgress = computed(() =>
 
 const weekDayLabels = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 
-function getCurrentWeekStart() {
-  const now = new Date()
-  const day = now.getDay()
-  const diff = day === 0 ? 6 : day - 1
-  const monday = new Date(now)
-  monday.setHours(0, 0, 0, 0)
-  monday.setDate(now.getDate() - diff)
-  return monday.getTime()
-}
-
 const weeklyGrowthValues = computed(() => {
-  const weekStart = getCurrentWeekStart()
-  const dayMs = 24 * 60 * 60 * 1000
-  const dailyValues = Array(7).fill(0)
-
-  for (const record of weeklyChartRecords.value) {
-    if (!record.timestamp) continue
-    const recordDate = new Date(record.timestamp)
-    const recordDayStart = new Date(recordDate)
-    recordDayStart.setHours(0, 0, 0, 0)
-    const dayIndex = Math.floor((recordDayStart.getTime() - weekStart) / dayMs)
-    if (dayIndex < 0 || dayIndex > 6) continue
-    dailyValues[dayIndex] += Math.max(record.points, 0)
-  }
-
-  let runningTotal = 0
-  return dailyValues.map(value => {
-    runningTotal += value
-    return runningTotal
-  })
+  const values = weeklyGrowthSeries.value
+  return values.length ? values : [0, 0, 0, 0, 0, 0, 0]
 })
 
 function getPetGalleryStyle(pet: PetType) {
@@ -710,10 +724,14 @@ function closeAddModal() {
 // API calls
 async function loadClasses() {
   try {
-    const res = await api.get('/classes')
-    classes.value = res.data.classes
+    if (isDemoMode.value) {
+      await refreshClassSwitcherOptions()
+    } else {
+      const res = await api.get('/classes')
+      classes.value = (res.data.classes || []).filter((cls: Class) => cls.id !== DEMO_CLASS_ID)
+    }
     if (classes.value.length > 0) {
-      const savedClassId = getSavedClassId(user.value?.id)
+      const savedClassId = resolveSavedClassIdForAccount()
       const savedClass = savedClassId ? classes.value.find(c => c.id === savedClassId) : null
       
       if (savedClass) {
@@ -732,11 +750,25 @@ async function loadClasses() {
 }
 
 async function selectClass(cls: Class) {
-  isDemoMode.value = cls.id === DEMO_CLASS_ID
   currentClass.value = cls
+  isDemoMode.value = cls.id === DEMO_CLASS_ID
   showAllStudents.value = false
-  saveCurrentClassId(cls.id, user.value?.id)
-  await Promise.all([loadStudents(true), loadEvaluationRecords(), loadWeeklyChartRecords(), loadActiveTasks(), refreshClassVipStatus()])
+  persistCurrentClassId(cls.id)
+  await loadStudents(true)
+  void refreshClassSwitcherOptions()
+  void loadClassDashboardExtras()
+}
+
+function loadClassDashboardExtras() {
+  return Promise.all([
+    loadEvaluationRecords(),
+    loadWeeklyChartRecords(),
+    loadActiveTasks(),
+    refreshClassVipStatus(),
+    loadRules(),
+  ]).catch((error) => {
+    console.error('加载工作台附加数据失败:', error)
+  })
 }
 
 async function loadActiveTasks() {
@@ -777,6 +809,10 @@ async function loadRules() {
 }
 
 async function createClass() {
+  if (isGuest.value) {
+    toast.warning('游客无法创建班级，请先注册教师账号')
+    return
+  }
   if (!newClassName.value.trim()) {
     toast.warning('请输入班级名称')
     return
@@ -791,13 +827,18 @@ async function createClass() {
     } else {
       toast.success('班级创建成功！')
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('创建班级失败:', error)
-    toast.error('创建班级失败，请重试')
+    const message = (error as { response?: { data?: { error?: string } } })?.response?.data?.error
+    toast.error(message || '创建班级失败，请重试')
   }
 }
 
 async function updateClass() {
+  if (isGuest.value) {
+    toast.warning('游客无法编辑班级，请先注册教师账号')
+    return
+  }
   if (!newClassName.value.trim()) {
     toast.warning('请输入班级名称')
     return
@@ -1248,18 +1289,18 @@ async function loadEvaluationRecords() {
 
 async function loadWeeklyChartRecords() {
   if (!currentClass.value) {
-    weeklyChartRecords.value = []
+    weeklyGrowthSeries.value = [0, 0, 0, 0, 0, 0, 0]
     return
   }
   try {
-    const res = await api.get(
-      `/evaluations?classId=${currentClass.value.id}&page=1&pageSize=200`,
-      requestConfigForCurrentClass()
-    )
-    weeklyChartRecords.value = res.data.records || []
+    const res = await api.get('/evaluations', {
+      params: { classId: currentClass.value.id, summary: 'week' },
+      ...requestConfigForCurrentClass(),
+    })
+    weeklyGrowthSeries.value = res.data.cumulative || [0, 0, 0, 0, 0, 0, 0]
   } catch (error) {
     console.error('加载周趋势数据失败:', error)
-    weeklyChartRecords.value = []
+    weeklyGrowthSeries.value = [0, 0, 0, 0, 0, 0, 0]
   }
 }
 
@@ -1379,43 +1420,48 @@ async function handleStudentsImported(event?: Event) {
   await loadStudents()
 }
 
-onBeforeRouteUpdate((to) => {
-  openLandingFromQuery(to.query, to.path)
+async function bootstrapWorkbenchRoute(targetRoute = route) {
+  const wantsDemo = targetRoute.query.demo === '1'
+  if (wantsDemo) {
+    const studentId = targetRoute.query.studentId
+    router.replace({
+      name: 'dashboard',
+      query: typeof studentId === 'string' ? { studentId } : {},
+    })
+    await enterDemoGarden()
+    void openStudentFromQuery()
+    return
+  }
+  if (isGuest.value && getSavedClassId(user.value?.id) === DEMO_CLASS_ID) {
+    await enterDemoGarden()
+    void openStudentFromQuery()
+    return
+  }
+  await loadClasses()
+  void openStudentFromQuery()
+}
+
+onBeforeRouteUpdate(async (to) => {
+  if (to.name !== 'dashboard') return
+  if (to.query.demo === '1' && !isDemoMode.value) {
+    workbenchBooting.value = true
+    try {
+      await enterDemoGarden()
+      void openStudentFromQuery()
+    } finally {
+      workbenchBooting.value = false
+    }
+  }
 })
 
 onMounted(async () => {
   window.addEventListener(STUDENTS_IMPORTED_EVENT, handleStudentsImported)
   window.addEventListener('click', handleDocumentClick)
-  isLoading.value = true
+  prefetchDemoGarden()
   try {
-    if (openLandingFromQuery(route.query, route.path)) {
-      return
-    }
-    const wantsDemo = route.query.demo === '1'
-    if (wantsDemo) {
-      const studentId = route.query.studentId
-      router.replace({
-        path: route.path,
-        query: typeof studentId === 'string' ? { studentId } : {}
-      })
-      await enterDemoGarden()
-      await openStudentFromQuery()
-      return
-    }
-    if (isGuest.value && getSavedClassId(user.value?.id) === DEMO_CLASS_ID) {
-      await enterDemoGarden()
-      await openStudentFromQuery()
-      return
-    }
-    const shouldLand = await shouldShowLanding()
-    showLanding.value = shouldLand
-    if (!shouldLand) {
-      await loadClasses()
-      await loadRules()
-      await openStudentFromQuery()
-    }
+    await bootstrapWorkbenchRoute()
   } finally {
-    isLoading.value = false
+    workbenchBooting.value = false
     nextTick(() => {
       isLoaded.value = true
     })
@@ -1430,94 +1476,15 @@ onUnmounted(() => {
 
 <template>
   <div class="min-h-screen bg-[#fffdfb] font-sans text-slate-800">
-    <Transition>
-      <div v-if="isLoading" class="fixed inset-0 z-[200] flex items-center justify-center bg-[#fffaf5]">
-        <div class="text-center">
-          <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-[24px] bg-orange-100 text-3xl shadow-sm">🐾</div>
-          <p class="mt-4 text-sm font-semibold text-slate-600">正在打开班级宠物园</p>
-        </div>
-      </div>
-    </Transition>
-
-    <template v-if="showLanding">
-      <main class="overflow-hidden bg-white text-[#1a1a1a]">
-        <section class="flex items-center justify-center px-5 pt-16 pb-8 sm:px-8 sm:pb-10">
-          <div class="flex w-full max-w-[860px] flex-col items-center text-center">
-            <div class="flex h-[34px] items-center justify-center gap-2 rounded-full bg-[#fff3ec] px-4">
-              <span class="h-2 w-2 rounded-full bg-[#ff5c00]"></span>
-              <span class="font-brand text-sm font-bold text-[#ff5c00]">班级宠物园</span>
-            </div>
-            <h1 class="mt-[22px] max-w-[820px] font-serif text-5xl font-bold leading-[0.98] text-[#1a1a1a] sm:text-[68px]">{{ landingHeadline }}</h1>
-            <p class="mt-[22px] max-w-[660px] text-base leading-[1.45] text-[#666] sm:text-xl">老师快速加分，学生的宠物随习惯一起升级。</p>
-            <div class="mt-[22px] flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <button type="button" class="font-brand h-12 rounded-full bg-[#ff5c00] px-8 text-[15px] font-bold text-white shadow-[0_16px_40px_rgba(0,0,0,0.07)] transition hover:bg-[#e95300]" @click="enterDemoGarden">进入演示班级</button>
-              <router-link to="/register" class="font-brand inline-flex h-12 items-center rounded-full border border-[#ff5c00] bg-white px-8 text-[15px] font-bold text-[#ff5c00] transition hover:bg-[#fff3ec]">我是老师，创建新班级</router-link>
-            </div>
-            <div class="mt-[22px] flex h-[86px] w-full max-w-[420px] items-center justify-center gap-[18px] rounded-xl border border-[#f3f4f6] bg-white px-[18px] py-[14px] text-left shadow-[0_16px_40px_rgba(0,0,0,0.07)]">
-              <div class="relative h-[58px] w-[58px] shrink-0 rounded-xl bg-[#fff3ec]">
-                <span class="absolute left-[15px] top-[14px] h-7 w-7 rounded-full bg-[#ff8533]"></span>
-                <span class="absolute left-3 top-[10px] h-2.5 w-2.5 rounded-full bg-[#ff8533]"></span>
-                <span class="absolute right-3 top-[10px] h-2.5 w-2.5 rounded-full bg-[#ff8533]"></span>
-              </div>
-              <div class="min-w-0">
-                <p class="font-brand text-sm font-bold text-[#1a1a1a]">评价一次，成长一点</p>
-                <p class="mt-1 text-sm leading-5 text-[#888]">积分、等级、徽章都围绕学生的日常表现。</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="flex flex-col items-center justify-center gap-[18px] px-5 py-10 sm:h-[700px] sm:px-8 lg:h-auto lg:min-h-[820px] lg:gap-6 lg:py-14">
-          <div class="text-center">
-            <p class="font-brand text-sm leading-5 font-semibold text-[#ff5c00]">产品截图</p>
-            <h2 class="mt-4 font-serif text-3xl font-bold leading-[1.05] text-[#1a1a1a] sm:text-[34px]">把喂养、成长与班级记录放在同一屏。</h2>
-          </div>
-          <div class="flex w-full max-w-[1040px] items-center justify-center rounded-xl border border-[#f3f4f6] bg-white p-3 shadow-[0_16px_40px_rgba(0,0,0,0.07)] sm:h-[590px] sm:p-4 lg:max-w-[1180px] lg:h-[660px] lg:p-5 xl:max-w-[1280px] xl:h-[720px]">
-            <img src="/class-pet-garden-product.png" alt="班级宠物园产品截图" class="w-full rounded-lg sm:h-full sm:object-contain" />
-          </div>
-        </section>
-
-        <section class="relative flex min-h-[230px] flex-col items-center justify-center gap-5 px-5 py-12 sm:px-8">
-          <span class="absolute left-[18%] top-[42px] h-[7px] w-[7px] rounded-full bg-[#ff8533]"></span>
-          <span class="absolute right-[18%] top-[40px] text-base text-[#ff5c00]">✦</span>
-          <span class="absolute bottom-[34px] left-[24%] h-1 w-[18px] rotate-[-18deg] rounded-full bg-[#ff5c00]"></span>
-          <div class="text-center">
-            <p class="font-brand text-sm leading-5 font-semibold text-[#ff5c00]">CLASS PET GARDEN</p>
-            <h2 class="mt-4 font-serif text-3xl font-bold leading-[1.05] text-[#1a1a1a] sm:text-[34px]">让班级反馈，变成孩子看得见的成长</h2>
-          </div>
-          <div class="flex w-full max-w-[900px] flex-col gap-6 md:flex-row md:items-center md:gap-6">
-            <article class="flex flex-1 items-center gap-3"><div class="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-[#fff3eb] text-[#ff5c00]"><span class="material-symbols-rounded text-[20px]">rate_review</span></div><div><h3 class="text-[17px] font-[650]">快速评价</h3><p class="font-brand mt-1 text-sm leading-[1.25] text-[#666]">老师轻点完成课堂反馈</p></div></article>
-            <div class="hidden h-12 w-px bg-[#f3f4f6] md:block"></div>
-            <article class="flex flex-1 items-center gap-3"><div class="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-[#fff3eb] text-[#ff5c00]"><span class="material-symbols-rounded text-[20px]">pets</span></div><div><h3 class="text-[17px] font-[650]">宠物成长</h3><p class="font-brand mt-1 text-sm leading-[1.25] text-[#666]">每次进步都喂养专属小宠物</p></div></article>
-            <div class="hidden h-12 w-px bg-[#f3f4f6] md:block"></div>
-            <article class="flex flex-1 items-center gap-3"><div class="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-[#fff3eb] text-[#ff5c00]"><span class="material-symbols-rounded text-[20px]">emoji_events</span></div><div><h3 class="text-[17px] font-[650]">班级荣誉</h3><p class="font-brand mt-1 text-sm leading-[1.25] text-[#666]">把个人努力汇成班级勋章</p></div></article>
-          </div>
-        </section>
-
-        <footer class="flex h-[210px] items-center justify-center bg-[#f7f8fa] px-5 text-center sm:px-8">
-          <div class="flex flex-col items-center gap-[14px]">
-            <h2 class="font-serif text-3xl font-bold text-[#1a1a1a] sm:text-[34px]">先从一个班级开始。</h2>
-            <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-base">
-              <span class="text-[#666]">导入学生，设置评价规则，让成长被看见。</span>
-              <button type="button" class="font-brand font-bold text-[#ff5c00] underline-offset-2 transition hover:text-[#e95300] hover:underline" @click="enterDemoGarden">进入演示班级</button>
-              <span class="text-[#ccc]">·</span>
-              <router-link to="/register" class="font-brand font-bold text-[#ff5c00] underline-offset-2 transition hover:text-[#e95300] hover:underline">我是老师，创建新班级</router-link>
-            </div>
-            <p class="font-brand text-sm text-[#888]">© 2026 班级宠物园。保留所有权利。</p>
-          </div>
-        </footer>
-      </main>
-    </template>
-
-    <template v-else>
-      <AppShell active-page="dashboard" title="班级工作台" :navigation-dimmed="stampMode">
+    <AppShell active-page="dashboard" title="班级工作台" :navigation-dimmed="stampMode">
         <div class="flex min-w-0 flex-col gap-5" :class="stampMode ? 'pb-44 xl:pb-0' : ''">
           <header class="relative flex min-h-[62px] flex-wrap items-center gap-3">
-            <div v-if="currentClass" class="relative" data-class-switcher :class="stampDimClass">
+            <div v-if="workbenchBooting && !currentClass" class="h-[42px] w-[200px] animate-pulse rounded-full bg-[#f5f0eb]" aria-hidden="true" />
+            <div v-else-if="currentClass" class="relative" data-class-switcher :class="stampDimClass">
               <button
                 type="button"
                 class="inline-flex h-[42px] max-w-[min(100%,280px)] items-center gap-2 rounded-full bg-[#fff1e8] px-3 text-sm font-semibold text-[#b85e25] transition"
-                :class="classes.length > 1 ? 'cursor-pointer pr-2 hover:bg-[#ffe8da]' : 'cursor-default'"
+                :class="classSwitcherInteractive ? 'cursor-pointer pr-2 hover:bg-[#ffe8da]' : 'cursor-default'"
                 @click.stop="toggleClassMenu"
               >
                 <span class="material-symbols-rounded shrink-0 text-[18px] leading-none">school</span>
@@ -1525,14 +1492,14 @@ onUnmounted(() => {
                 <span class="shrink-0 text-[#d97706]/70">·</span>
                 <span class="shrink-0">{{ students.length }} 名学生</span>
                 <span
-                  v-if="classes.length > 1"
+                  v-if="classSwitcherInteractive"
                   class="material-symbols-rounded ml-0.5 shrink-0 text-[18px] leading-none text-[#d97706]/80 transition-transform"
                   :class="showClassMenu ? 'rotate-180' : ''"
                 >expand_more</span>
               </button>
 
               <div
-                v-if="showClassMenu && classes.length > 1"
+                v-if="showClassMenu && classSwitcherInteractive"
                 class="absolute left-0 top-[calc(100%+6px)] z-50 min-w-[220px] overflow-hidden rounded-2xl border border-[#f1e5db] bg-white py-1 shadow-[0_12px_36px_rgba(116,76,45,0.12)]"
                 @click.stop
               >
@@ -1546,8 +1513,22 @@ onUnmounted(() => {
                 >
                   <span class="material-symbols-rounded text-[18px] leading-none" :class="cls.id === currentClass.id ? 'text-[#d97706]' : 'text-[#c4a494]'">school</span>
                   <span class="min-w-0 flex-1 truncate">{{ cls.name }}</span>
+                  <span
+                    v-if="cls.id === DEMO_CLASS_ID"
+                    class="shrink-0 rounded-full bg-[#fff0e2] px-2 py-0.5 text-[10px] font-bold text-[#d97706]"
+                  >演示</span>
                   <span v-if="cls.id === currentClass.id" class="material-symbols-rounded text-[16px] text-[#d97706]">check</span>
                 </button>
+                <div v-if="isViewingDemoClass && isGuest" class="border-t border-[#f1e5db] px-2 pb-1 pt-1">
+                  <button
+                    type="button"
+                    class="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-[#765f50] transition hover:bg-[#fff7f1]"
+                    @click="exitDemoToLanding"
+                  >
+                    <span class="material-symbols-rounded text-[18px] leading-none text-[#c4a494]">home</span>
+                    <span>返回首页</span>
+                  </button>
+                </div>
               </div>
             </div>
             <label class="flex h-[42px] min-w-[220px] flex-1 items-center gap-2 rounded-xl border border-[#edeff2] bg-white px-3 text-sm text-[#888]" :class="stampDimClass">
@@ -1580,7 +1561,18 @@ onUnmounted(() => {
 
           <div class="flex min-w-0 flex-col gap-5 xl:flex-row">
             <main class="min-w-0 flex-1 space-y-[14px]">
-            <template v-if="classes.length">
+            <section
+              v-if="workbenchBooting"
+              class="animate-pulse space-y-[14px]"
+              aria-busy="true"
+              aria-label="工作台加载中"
+            >
+              <div class="grid grid-cols-2 gap-3 xl:grid-cols-4">
+                <div v-for="n in 4" :key="n" class="h-[88px] rounded-[20px] bg-[#f5f0eb]" />
+              </div>
+              <div class="h-[360px] rounded-[18px] border border-[#f0e7dd] bg-[#faf7f4]" />
+            </section>
+            <template v-else-if="classes.length">
               <section class="grid grid-cols-2 gap-3 xl:grid-cols-4" :class="stampDimClass">
                 <article class="relative overflow-hidden rounded-[20px] border border-orange-200/70 bg-gradient-to-br from-[#fff7ea] to-[#ffe9bf] p-3 shadow-[0_8px_18px_rgba(0,0,0,0.04)] xl:p-[18px_20px]"><div class="flex items-center gap-2 xl:gap-3.5"><span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#ffe0a3] text-[#ff7a1a] xl:h-[52px] xl:w-[52px]"><span class="material-symbols-rounded text-[18px] xl:text-[22px]">emoji_events</span></span><div class="min-w-0"><p class="text-[13px] font-bold xl:text-[15px]">班级总积分</p><p class="font-mono text-2xl font-extrabold text-[#ff7a1a] xl:text-[31px]">{{ totalClassPoints }}</p><p class="text-xs leading-4 text-[#9a5a2b] xl:text-sm">{{ students.length }} 位学生共同积累</p></div></div></article>
                 <article class="relative overflow-hidden rounded-[20px] border border-rose-200/70 bg-gradient-to-br from-[#fff1f5] to-[#ffd9e3] p-3 shadow-[0_8px_18px_rgba(0,0,0,0.04)] xl:p-[18px_20px]"><div class="flex items-center gap-2 xl:gap-3.5"><span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#ffc0d0] text-[#f43f75] xl:h-[52px] xl:w-[52px]"><span class="material-symbols-rounded text-[18px] xl:text-[22px]">rate_review</span></span><div class="min-w-0"><p class="text-[13px] font-bold xl:text-[15px]">今日评价次数</p><p class="font-mono text-2xl font-extrabold text-[#f43f75] xl:text-[31px]">{{ todayEvaluationCount }}</p><p class="text-xs leading-4 text-[#a84b65] xl:text-sm">记录每一个闪光瞬间</p></div></div></article>
@@ -1612,7 +1604,7 @@ onUnmounted(() => {
                   <article v-for="student in displayedStudents" :key="student.id" class="rounded-[15px] border border-orange-200 bg-[#fff6e8] p-3 shadow-[0_4px_14px_rgba(170,103,53,0.06)] transition hover:-translate-y-0.5 hover:shadow-md" :class="stampMode && activeStampRule ? 'cursor-pointer ring-2 ring-rose-100 hover:ring-rose-300' : ''" @click="stampMode ? handleStudentCardClick(student) : undefined">
                     <div class="flex gap-3">
                       <button type="button" class="relative w-2/3 shrink-0 overflow-hidden rounded-2xl bg-white" @click.stop="handleStudentCardClick(student)">
-                        <div class="aspect-square w-full"><img v-if="student.pet_type" :src="getStudentPetImage(student)" :alt="getPetType(student.pet_type)?.name" class="h-full w-full object-contain object-bottom" /><span v-else class="flex h-full w-full items-center justify-center text-4xl text-[#ccc]">?</span></div>
+                        <div class="aspect-square w-full"><img v-if="student.pet_type" :src="getStudentPetImage(student)" :alt="getPetType(student.pet_type)?.name" class="h-full w-full object-contain object-bottom" loading="lazy" decoding="async" /><span v-else class="flex h-full w-full items-center justify-center text-4xl text-[#ccc]">?</span></div>
                         <span class="absolute bottom-2 left-2 rounded-full px-3 py-1 text-xs font-extrabold tracking-wide" :class="getLevelBadgeClass(getDisplayLevel(student))">Lv.{{ getDisplayLevel(student) }}</span>
                       </button>
                       <div class="flex min-w-0 w-1/3 flex-col justify-between py-2">
@@ -1634,7 +1626,7 @@ onUnmounted(() => {
                 <div v-else-if="students.length" class="mt-3 flex flex-col gap-2">
                   <article v-for="student in displayedStudents" :key="student.id" class="rounded-[15px] border border-orange-200 bg-[#fff6e8] px-3 py-2.5 transition hover:bg-[#fff1e0]" :class="stampMode && activeStampRule ? 'cursor-pointer ring-2 ring-rose-100 hover:ring-rose-300' : ''" @click="stampMode ? handleStudentCardClick(student) : undefined">
                     <div class="flex items-center gap-3">
-                      <button type="button" class="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white" @click.stop="handleStudentCardClick(student)"><img v-if="student.pet_type" :src="getStudentPetImage(student)" :alt="getPetType(student.pet_type)?.name" class="h-full w-full object-contain p-1" /><span v-else class="text-xl">?</span><span class="absolute -bottom-1 -right-1 rounded-full px-2 py-0.5 text-xs font-extrabold tracking-wide" :class="getLevelBadgeClass(getDisplayLevel(student))">Lv.{{ getDisplayLevel(student) }}</span></button>
+                      <button type="button" class="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white" @click.stop="handleStudentCardClick(student)"><img v-if="student.pet_type" :src="getStudentPetImage(student)" :alt="getPetType(student.pet_type)?.name" class="h-full w-full object-contain p-1" loading="lazy" decoding="async" /><span v-else class="text-xl">?</span><span class="absolute -bottom-1 -right-1 rounded-full px-2 py-0.5 text-xs font-extrabold tracking-wide" :class="getLevelBadgeClass(getDisplayLevel(student))">Lv.{{ getDisplayLevel(student) }}</span></button>
                       <div class="min-w-0 flex-1"><div class="flex flex-nowrap items-center gap-1"><p class="min-w-0 text-sm font-bold leading-tight">{{ student.name }}</p><span :class="[BADGE_CLASS, getStudentStatusTag(student).class]">{{ getStudentStatusTag(student).label }}</span></div><p class="mt-0.5 text-sm text-[#888]"><template v-if="student.student_no">学号：{{ student.student_no }} · </template>{{ student.pet_type ? getPetType(student.pet_type)?.name : '等待领养' }}</p><div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white"><div class="h-full rounded-full bg-[#ff9f1c]" :style="{ width: `${getStudentProgress(student).percent}%` }"></div></div></div>
                       <div class="shrink-0 text-right"><p class="text-sm font-bold text-[#ff7a1a]">{{ student.total_points }}</p><div class="mt-1 flex gap-1"><button type="button" class="rounded-md border border-emerald-200 px-2 py-1 text-sm font-bold text-emerald-600" @click.stop="openCardQuickEval(student, true)">+</button><button type="button" class="rounded-md border border-rose-200 px-2 py-1 text-sm font-bold text-rose-500" @click.stop="openCardQuickEval(student, false)">-</button></div></div>
                     </div>
@@ -1825,8 +1817,7 @@ onUnmounted(() => {
             </Transition>
           </div>
         </div>
-      </AppShell>
-    </template>
+    </AppShell>
 
     <Transition><div v-if="showClassModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 p-4"><div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><p class="text-sm font-bold tracking-wider text-orange-600">CLASS</p><h2 class="mt-1 font-serif text-2xl font-bold">{{ editingClass ? '编辑班级' : '创建班级' }}</h2><input v-model="newClassName" class="mt-5 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-orange-400" placeholder="例如：三年二班" @keyup.enter="editingClass ? updateClass() : createClass()" /><div class="mt-5 flex justify-end gap-2"><button type="button" class="px-4 py-2 text-sm" @click="showClassModal = false">取消</button><button type="button" class="rounded-xl bg-orange-600 px-4 py-2 text-sm font-bold text-white" @click="editingClass ? updateClass() : createClass()">确认</button></div></div></div></Transition>
     <Transition><div v-if="showStudentModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 p-4"><div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><h2 class="font-serif text-2xl font-bold">添加学生</h2><input v-model="newStudentName" class="mt-5 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-orange-400" placeholder="学生姓名" /><input v-model="newStudentNo" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-orange-400" placeholder="学号（可选）" /><div class="mt-5 flex justify-end gap-2"><button type="button" class="px-4 py-2 text-sm" @click="showStudentModal = false">取消</button><button type="button" class="rounded-xl bg-orange-600 px-4 py-2 text-sm font-bold text-white" @click="addStudent">添加</button></div></div></div></Transition>

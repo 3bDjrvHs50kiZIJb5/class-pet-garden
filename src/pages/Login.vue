@@ -18,7 +18,7 @@ const error = ref('')
 
 onMounted(() => {
   if (!isGuest.value) {
-    router.replace('/')
+    router.replace('/dashboard')
   }
 })
 
@@ -43,7 +43,7 @@ async function handleSubmit() {
     if (res.data.success) {
       setUser(res.data.user, res.data.token)
       toast.success(`欢迎，${res.data.user.username}！`)
-      const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
+      const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
       router.replace(redirect)
     }
   } catch (err: any) {
@@ -54,7 +54,7 @@ async function handleSubmit() {
 }
 
 function guestContinue() {
-  router.replace({ path: '/', query: { demo: '1' } })
+  router.replace({ path: '/dashboard', query: { demo: '1' } })
 }
 </script>
 

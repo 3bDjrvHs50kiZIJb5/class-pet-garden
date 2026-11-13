@@ -593,7 +593,7 @@ onUnmounted(() => {
           <div v-if="!classes.length" class="mt-5 rounded-2xl bg-[#fff8f2] px-5 py-14 text-center">
             <span class="material-symbols-rounded text-[40px] text-[#e8c9ae]">assignment</span>
             <p class="mt-3 text-sm font-medium text-[#75533d]">还没有班级，无法发布任务</p>
-            <router-link to="/" class="mt-3 inline-flex text-sm font-semibold text-orange-600 hover:text-orange-700">前往工作台创建班级</router-link>
+            <router-link to="/dashboard" class="mt-3 inline-flex text-sm font-semibold text-orange-600 hover:text-orange-700">前往工作台创建班级</router-link>
           </div>
 
           <div v-else class="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">

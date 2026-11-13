@@ -312,7 +312,7 @@ async function confirmDeleteMember() {
 
 onMounted(() => {
   if (!isAdmin.value) {
-    router.replace('/')
+    router.replace('/dashboard')
     return
   }
   loadClasses()
