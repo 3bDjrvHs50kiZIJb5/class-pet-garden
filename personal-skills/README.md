@@ -4,6 +4,6 @@
 
 | Skill | 安装 |
 |-------|------|
-| [cloud-agent-fullstack-dev-env](./cloud-agent-fullstack-dev-env/) | `cp -a personal-skills/cloud-agent-fullstack-dev-env ~/.cursor/skills/` |
+| [cloud-agent-fullstack-dev-env](./cloud-agent-fullstack-dev-env/) | 本仓库已在 `.cursor/skills/cloud-agent-fullstack-dev-env/`（`/技能名` 可见）。其它项目：`cp -a ... ~/.cursor/skills/` |
 
 安装后可在 **Settings → Agents → Sync Skills for Cloud Agents** 同步到 Cloud Agent。
