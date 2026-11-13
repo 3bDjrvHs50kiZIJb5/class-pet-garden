@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick, defineAsyncComponent } from 'vue'
 import { useRoute, useRouter, onBeforeRouteUpdate, type LocationQuery, type LocationQueryRaw } from 'vue-router'
 import { PET_TYPES, getPetType, getLevelProgress, calculateLevel, getPetLevelImage, getPetLevel1Image, isMythicalPet, type PetType } from '@/data/pets'
 import PetImage from '@/components/PetImage.vue'
 import AppShell from '@/components/AppShell.vue'
-import GrowthAreaChart from '@/components/GrowthAreaChart.vue'
-import ConfirmDialog from '@/components/ConfirmDialog.vue'
-import BgmTrackPicker from '@/components/BgmTrackPicker.vue'
-import RankListRow from '@/components/ranking/RankListRow.vue'
+const GrowthAreaChart = defineAsyncComponent(() => import('@/components/GrowthAreaChart.vue'))
+const ConfirmDialog = defineAsyncComponent(() => import('@/components/ConfirmDialog.vue'))
+const BgmTrackPicker = defineAsyncComponent(() => import('@/components/BgmTrackPicker.vue'))
+const RankListRow = defineAsyncComponent(() => import('@/components/ranking/RankListRow.vue'))
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import { useLandingGate } from '@/composables/useLandingGate'
@@ -82,7 +82,7 @@ const newStudentNo = ref('')
 const selectedStudent = ref<Student | null>(null)
 const evaluationRecords = ref<any[]>([])
 const todayEvaluationCount = ref(0)
-const weeklyChartRecords = ref<any[]>([])
+const weeklyGrowthSeries = ref<number[]>([0, 0, 0, 0, 0, 0, 0])
 const selectedEvalTab = ref('学习')
 const stampMode = ref(false)
 const activeStampRule = ref<Rule | null>(null)
@@ -233,20 +233,7 @@ async function enterDemoGarden() {
     totalRecords.value = res.data.total || evaluationRecords.value.length
     todayEvaluationCount.value = evaluationRecords.value.length
     enterGarden()
-    const [rulesResult, recordsResult, chartResult] = await Promise.allSettled([
-      loadRules(),
-      loadEvaluationRecords(),
-      loadWeeklyChartRecords()
-    ])
-    if (rulesResult.status === 'rejected') {
-      console.error('加载演示规则失败:', rulesResult.reason)
-    }
-    if (recordsResult.status === 'rejected') {
-      console.error('加载演示评价记录失败:', recordsResult.reason)
-    }
-    if (chartResult.status === 'rejected') {
-      console.error('加载演示周趋势失败:', chartResult.reason)
-    }
+    void loadClassDashboardExtras()
   } catch (error) {
     console.error('加载演示班级失败:', error)
     toast.error('演示班级暂时无法加载，请稍后重试')
@@ -583,36 +570,9 @@ const collectionProgress = computed(() =>
 
 const weekDayLabels = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 
-function getCurrentWeekStart() {
-  const now = new Date()
-  const day = now.getDay()
-  const diff = day === 0 ? 6 : day - 1
-  const monday = new Date(now)
-  monday.setHours(0, 0, 0, 0)
-  monday.setDate(now.getDate() - diff)
-  return monday.getTime()
-}
-
 const weeklyGrowthValues = computed(() => {
-  const weekStart = getCurrentWeekStart()
-  const dayMs = 24 * 60 * 60 * 1000
-  const dailyValues = Array(7).fill(0)
-
-  for (const record of weeklyChartRecords.value) {
-    if (!record.timestamp) continue
-    const recordDate = new Date(record.timestamp)
-    const recordDayStart = new Date(recordDate)
-    recordDayStart.setHours(0, 0, 0, 0)
-    const dayIndex = Math.floor((recordDayStart.getTime() - weekStart) / dayMs)
-    if (dayIndex < 0 || dayIndex > 6) continue
-    dailyValues[dayIndex] += Math.max(record.points, 0)
-  }
-
-  let runningTotal = 0
-  return dailyValues.map(value => {
-    runningTotal += value
-    return runningTotal
-  })
+  const values = weeklyGrowthSeries.value
+  return values.length ? values : [0, 0, 0, 0, 0, 0, 0]
 })
 
 function getPetGalleryStyle(pet: PetType) {
@@ -736,7 +696,20 @@ async function selectClass(cls: Class) {
   currentClass.value = cls
   showAllStudents.value = false
   saveCurrentClassId(cls.id, user.value?.id)
-  await Promise.all([loadStudents(true), loadEvaluationRecords(), loadWeeklyChartRecords(), loadActiveTasks(), refreshClassVipStatus()])
+  await loadStudents(true)
+  void loadClassDashboardExtras()
+}
+
+function loadClassDashboardExtras() {
+  return Promise.all([
+    loadEvaluationRecords(),
+    loadWeeklyChartRecords(),
+    loadActiveTasks(),
+    refreshClassVipStatus(),
+    loadRules(),
+  ]).catch((error) => {
+    console.error('加载工作台附加数据失败:', error)
+  })
 }
 
 async function loadActiveTasks() {
@@ -1248,18 +1221,18 @@ async function loadEvaluationRecords() {
 
 async function loadWeeklyChartRecords() {
   if (!currentClass.value) {
-    weeklyChartRecords.value = []
+    weeklyGrowthSeries.value = [0, 0, 0, 0, 0, 0, 0]
     return
   }
   try {
-    const res = await api.get(
-      `/evaluations?classId=${currentClass.value.id}&page=1&pageSize=200`,
-      requestConfigForCurrentClass()
-    )
-    weeklyChartRecords.value = res.data.records || []
+    const res = await api.get('/evaluations', {
+      params: { classId: currentClass.value.id, summary: 'week' },
+      ...requestConfigForCurrentClass(),
+    })
+    weeklyGrowthSeries.value = res.data.cumulative || [0, 0, 0, 0, 0, 0, 0]
   } catch (error) {
     console.error('加载周趋势数据失败:', error)
-    weeklyChartRecords.value = []
+    weeklyGrowthSeries.value = [0, 0, 0, 0, 0, 0, 0]
   }
 }
 
@@ -1409,11 +1382,12 @@ onMounted(async () => {
     }
     const shouldLand = await shouldShowLanding()
     showLanding.value = shouldLand
-    if (!shouldLand) {
-      await loadClasses()
-      await loadRules()
-      await openStudentFromQuery()
+    if (shouldLand) {
+      isLoading.value = false
+      return
     }
+    await loadClasses()
+    await openStudentFromQuery()
   } finally {
     isLoading.value = false
     nextTick(() => {
@@ -1473,7 +1447,7 @@ onUnmounted(() => {
             <h2 class="mt-4 font-serif text-3xl font-bold leading-[1.05] text-[#1a1a1a] sm:text-[34px]">把喂养、成长与班级记录放在同一屏。</h2>
           </div>
           <div class="flex w-full max-w-[1040px] items-center justify-center rounded-xl border border-[#f3f4f6] bg-white p-3 shadow-[0_16px_40px_rgba(0,0,0,0.07)] sm:h-[590px] sm:p-4 lg:max-w-[1180px] lg:h-[660px] lg:p-5 xl:max-w-[1280px] xl:h-[720px]">
-            <img src="/class-pet-garden-product.png" alt="班级宠物园产品截图" class="w-full rounded-lg sm:h-full sm:object-contain" />
+            <img src="/class-pet-garden-product.png" alt="班级宠物园产品截图" class="w-full rounded-lg sm:h-full sm:object-contain" loading="lazy" decoding="async" />
           </div>
         </section>
 
@@ -1612,7 +1586,7 @@ onUnmounted(() => {
                   <article v-for="student in displayedStudents" :key="student.id" class="rounded-[15px] border border-orange-200 bg-[#fff6e8] p-3 shadow-[0_4px_14px_rgba(170,103,53,0.06)] transition hover:-translate-y-0.5 hover:shadow-md" :class="stampMode && activeStampRule ? 'cursor-pointer ring-2 ring-rose-100 hover:ring-rose-300' : ''" @click="stampMode ? handleStudentCardClick(student) : undefined">
                     <div class="flex gap-3">
                       <button type="button" class="relative w-2/3 shrink-0 overflow-hidden rounded-2xl bg-white" @click.stop="handleStudentCardClick(student)">
-                        <div class="aspect-square w-full"><img v-if="student.pet_type" :src="getStudentPetImage(student)" :alt="getPetType(student.pet_type)?.name" class="h-full w-full object-contain object-bottom" /><span v-else class="flex h-full w-full items-center justify-center text-4xl text-[#ccc]">?</span></div>
+                        <div class="aspect-square w-full"><img v-if="student.pet_type" :src="getStudentPetImage(student)" :alt="getPetType(student.pet_type)?.name" class="h-full w-full object-contain object-bottom" loading="lazy" decoding="async" /><span v-else class="flex h-full w-full items-center justify-center text-4xl text-[#ccc]">?</span></div>
                         <span class="absolute bottom-2 left-2 rounded-full px-3 py-1 text-xs font-extrabold tracking-wide" :class="getLevelBadgeClass(getDisplayLevel(student))">Lv.{{ getDisplayLevel(student) }}</span>
                       </button>
                       <div class="flex min-w-0 w-1/3 flex-col justify-between py-2">
@@ -1634,7 +1608,7 @@ onUnmounted(() => {
                 <div v-else-if="students.length" class="mt-3 flex flex-col gap-2">
                   <article v-for="student in displayedStudents" :key="student.id" class="rounded-[15px] border border-orange-200 bg-[#fff6e8] px-3 py-2.5 transition hover:bg-[#fff1e0]" :class="stampMode && activeStampRule ? 'cursor-pointer ring-2 ring-rose-100 hover:ring-rose-300' : ''" @click="stampMode ? handleStudentCardClick(student) : undefined">
                     <div class="flex items-center gap-3">
-                      <button type="button" class="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white" @click.stop="handleStudentCardClick(student)"><img v-if="student.pet_type" :src="getStudentPetImage(student)" :alt="getPetType(student.pet_type)?.name" class="h-full w-full object-contain p-1" /><span v-else class="text-xl">?</span><span class="absolute -bottom-1 -right-1 rounded-full px-2 py-0.5 text-xs font-extrabold tracking-wide" :class="getLevelBadgeClass(getDisplayLevel(student))">Lv.{{ getDisplayLevel(student) }}</span></button>
+                      <button type="button" class="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white" @click.stop="handleStudentCardClick(student)"><img v-if="student.pet_type" :src="getStudentPetImage(student)" :alt="getPetType(student.pet_type)?.name" class="h-full w-full object-contain p-1" loading="lazy" decoding="async" /><span v-else class="text-xl">?</span><span class="absolute -bottom-1 -right-1 rounded-full px-2 py-0.5 text-xs font-extrabold tracking-wide" :class="getLevelBadgeClass(getDisplayLevel(student))">Lv.{{ getDisplayLevel(student) }}</span></button>
                       <div class="min-w-0 flex-1"><div class="flex flex-nowrap items-center gap-1"><p class="min-w-0 text-sm font-bold leading-tight">{{ student.name }}</p><span :class="[BADGE_CLASS, getStudentStatusTag(student).class]">{{ getStudentStatusTag(student).label }}</span></div><p class="mt-0.5 text-sm text-[#888]"><template v-if="student.student_no">学号：{{ student.student_no }} · </template>{{ student.pet_type ? getPetType(student.pet_type)?.name : '等待领养' }}</p><div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white"><div class="h-full rounded-full bg-[#ff9f1c]" :style="{ width: `${getStudentProgress(student).percent}%` }"></div></div></div>
                       <div class="shrink-0 text-right"><p class="text-sm font-bold text-[#ff7a1a]">{{ student.total_points }}</p><div class="mt-1 flex gap-1"><button type="button" class="rounded-md border border-emerald-200 px-2 py-1 text-sm font-bold text-emerald-600" @click.stop="openCardQuickEval(student, true)">+</button><button type="button" class="rounded-md border border-rose-200 px-2 py-1 text-sm font-bold text-rose-500" @click.stop="openCardQuickEval(student, false)">-</button></div></div>
                     </div>

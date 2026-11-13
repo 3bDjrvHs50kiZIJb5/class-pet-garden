@@ -12,6 +12,7 @@ import {
   EvaluationValidationError
 } from '../utils/evaluationValidation.js'
 import { getTodayTimestampRange } from '../utils/dateRange.js'
+import { queryWeekGrowthSummary } from '../utils/weekGrowth.js'
 
 const router = Router()
 
@@ -52,7 +53,23 @@ router.post('/', authMiddleware, async (req, res) => {
 
 // 获取评价记录列表
 router.get('/', authMiddleware, async (req, res) => {
-  const { classId, studentId, page = 1, pageSize = 20, today } = req.query
+  const { classId, studentId, page = 1, pageSize = 20, today, summary } = req.query
+
+  if (summary === 'week') {
+    if (!classId) {
+      return res.status(400).json({ error: 'classId required' })
+    }
+    const cls = await db.prepare('SELECT user_id FROM classes WHERE id = ?').get(classId)
+    if (!cls) {
+      return res.status(404).json({ error: '班级不存在' })
+    }
+    if (cls.user_id !== req.userId) {
+      return res.status(403).json({ error: '无权访问此班级' })
+    }
+    const weekSummary = await queryWeekGrowthSummary(db, { userId: req.userId, classId })
+    return res.json(weekSummary)
+  }
+
   const safePage = Math.max(1, Number(page) || 1)
   const safePageSize = Math.min(100, Math.max(1, Number(pageSize) || 20))
   const offset = (safePage - 1) * safePageSize
