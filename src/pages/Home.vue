@@ -134,6 +134,14 @@ function isPetAdoptionLocked(pet: PetType) {
 
 function enterGarden() {
   showLanding.value = false
+  if (route.name !== 'dashboard') {
+    const query: LocationQueryRaw = {}
+    const studentId = route.query.studentId
+    if (typeof studentId === 'string' && studentId) {
+      query.studentId = studentId
+    }
+    router.replace({ name: 'dashboard', query })
+  }
 }
 
 function wantsLandingPage(query: LocationQuery) {
@@ -1471,8 +1479,40 @@ async function handleStudentsImported(event?: Event) {
   await loadStudents()
 }
 
-onBeforeRouteUpdate((to) => {
-  openLandingFromQuery(to.query, to.path)
+async function bootstrapWorkbenchRoute(targetRoute = route) {
+  const wantsDemo = targetRoute.query.demo === '1'
+  if (wantsDemo) {
+    isLoading.value = true
+    const studentId = targetRoute.query.studentId
+    router.replace({
+      name: 'dashboard',
+      query: typeof studentId === 'string' ? { studentId } : {}
+    })
+    await enterDemoGarden()
+    await openStudentFromQuery()
+    return
+  }
+  if (isGuest.value && getSavedClassId(user.value?.id) === DEMO_CLASS_ID) {
+    isLoading.value = true
+    await enterDemoGarden()
+    await openStudentFromQuery()
+    return
+  }
+  isLoading.value = true
+  await loadClasses()
+  await openStudentFromQuery()
+}
+
+onBeforeRouteUpdate(async (to) => {
+  if (openLandingFromQuery(to.query, to.path)) return
+  if (to.name === 'home' && wantsLandingPage(to.query)) {
+    applyLandingPage()
+    return
+  }
+  if (to.name === 'dashboard' && showLanding.value) {
+    showLanding.value = false
+    await bootstrapWorkbenchRoute(to)
+  }
 })
 
 onMounted(async () => {
@@ -1482,33 +1522,18 @@ onMounted(async () => {
     if (openLandingFromQuery(route.query, route.path)) {
       return
     }
-    const wantsDemo = route.query.demo === '1'
-    if (wantsDemo) {
-      isLoading.value = true
-      const studentId = route.query.studentId
-      router.replace({
-        path: route.path,
-        query: typeof studentId === 'string' ? { studentId } : {}
-      })
-      await enterDemoGarden()
-      await openStudentFromQuery()
-      return
+    if (route.name === 'home') {
+      const shouldLand = await shouldShowLanding()
+      showLanding.value = shouldLand
+      if (shouldLand) {
+        prefetchDemoGarden()
+        return
+      }
+    } else if (route.name === 'dashboard') {
+      showLanding.value = false
     }
-    if (isGuest.value && getSavedClassId(user.value?.id) === DEMO_CLASS_ID) {
-      isLoading.value = true
-      await enterDemoGarden()
-      await openStudentFromQuery()
-      return
-    }
-    const shouldLand = await shouldShowLanding()
-    showLanding.value = shouldLand
-    if (shouldLand) {
-      prefetchDemoGarden()
-      return
-    }
-    isLoading.value = true
-    await loadClasses()
-    await openStudentFromQuery()
+
+    await bootstrapWorkbenchRoute()
   } finally {
     isLoading.value = false
     nextTick(() => {

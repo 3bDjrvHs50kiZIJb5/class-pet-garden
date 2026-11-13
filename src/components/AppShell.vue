@@ -44,7 +44,7 @@ const {
 } = useStudentImport()
 
 const navigationBeforeImport = computed(() => [
-  { id: 'dashboard', label: '工作台', icon: 'dashboard', to: '/' }
+  { id: 'dashboard', label: '工作台', icon: 'dashboard', to: '/dashboard' }
 ])
 
 const navigationAfterImport = computed(() => [

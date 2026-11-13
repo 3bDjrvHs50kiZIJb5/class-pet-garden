@@ -16,6 +16,7 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', alias: '/pet-garden/', name: 'home', component: Home },
+    { path: '/dashboard', alias: '/pet-garden/dashboard', name: 'dashboard', component: Home },
     { path: '/preview', alias: '/pet-garden/preview', name: 'preview', component: PetPreview },
     { path: '/rules', alias: '/pet-garden/rules', name: 'rules', component: EvaluationRules },
     { path: '/records', alias: '/pet-garden/records', name: 'records', component: FeedingRecords },
@@ -41,11 +42,11 @@ function isAdminUser() {
 }
 
 router.beforeEach((to) => {
-  if (to.name === 'home' && typeof to.query.studentId === 'string' && to.query.studentId) {
+  if ((to.name === 'home' || to.name === 'dashboard') && typeof to.query.studentId === 'string' && to.query.studentId) {
     return { name: 'student-share', params: { studentId: to.query.studentId } }
   }
   if (to.name === 'manage' && !isAdminUser()) {
-    return { name: 'home' }
+    return { name: 'dashboard' }
   }
 })
 

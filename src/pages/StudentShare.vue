@@ -101,7 +101,7 @@ onMounted(async () => {
         <span class="material-symbols-rounded text-[48px] text-[#e8c9ae]">pets</span>
         <p class="mt-4 text-lg font-bold text-[#422d20]">成长记录不存在</p>
         <p class="mt-2 text-sm text-[#9a735d]">链接可能已失效，请联系老师获取最新分享链接。</p>
-        <router-link to="/" class="mt-6 inline-flex text-sm font-semibold text-orange-600 hover:text-orange-700">
+        <router-link to="/dashboard" class="mt-6 inline-flex text-sm font-semibold text-orange-600 hover:text-orange-700">
           前往班级宠物园
         </router-link>
       </div>
