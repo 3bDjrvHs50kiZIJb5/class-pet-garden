@@ -2,9 +2,8 @@
 name: class-pet-garden
 description: >-
   班级宠物园开发与部署：Vue3 + Express + MySQL、本地/云端预览、GHCR Docker 发版（v* 标签）。
-  Cloud Agent 环境构建与 MariaDB 启动见 class-pet-garden-cloud-env skill。
-  在用户问启动项目、docker compose、打 tag 发镜像时使用；environment.json / Trigger build
-  / 配置云环境时优先读取 cloud-env skill。
+  Cloud Agent 环境：个人 skill cloud-agent-fullstack-dev-env（通用）+ 本仓库 class-pet-garden-cloud-env（特例）。
+  在用户问启动项目、docker compose、打 tag 发镜像时使用。
 ---
 
 # 班级宠物园（Class Pet Garden）Agent 指南
@@ -33,7 +32,7 @@ npm ci && npm ci --prefix server
 npm start          # concurrently: dev + server
 ```
 
-**Cloud Agent（已 Save 环境）：** 启动由 `.cursor/start.sh` 自动完成；手动排错见  
+**Cloud Agent：** 配环境读 `cloud-agent-fullstack-dev-env`；本仓库端口/库名见  
 `.cursor/skills/class-pet-garden-cloud-env/SKILL.md`。
 
 ## 生产 Docker
@@ -54,5 +53,5 @@ npm start          # concurrently: dev + server
 2. 不在聊天或 skill 中写入真实 `TOKEN_SECRET`、生产数据库密码。
 3. 验证功能：`npm run build`（`vue-tsc` + vite）；无自动化 E2E 时可视需要手动打开 3001。
 4. 分支命名（Cloud Agent 任务）：`cursor/<描述>-2140`。
-5. **新建/更新 Cloud 环境**：阅读并遵循  
-   `.cursor/skills/class-pet-garden-cloud-env/SKILL.md`。
+5. **新建/更新 Cloud 环境（任意项目）**：`cloud-agent-fullstack-dev-env`；本仓库再加  
+   `class-pet-garden-cloud-env`。
