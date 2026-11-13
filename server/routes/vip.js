@@ -1,9 +1,9 @@
 import { Router } from 'express'
 import { db } from '../db.js'
 import { authMiddleware } from '../middleware/auth.js'
+import { DEMO_CLASS_ID } from '../utils/adminCleanup.js'
 
 const router = Router()
-const DEMO_CLASS_ID = 'demo-class-2026'
 
 export const VIP_PLANS = {
   month: {
@@ -92,16 +92,16 @@ router.get('/', authMiddleware, async (req, res) => {
       c.created_at,
       (SELECT COUNT(*) FROM students s WHERE s.class_id = c.id) AS student_count
     FROM classes c
-    WHERE c.user_id = ?
+    WHERE c.user_id = ? AND c.id != ?
     ORDER BY c.created_at DESC
-  `).all(req.userId)
+  `).all(req.userId, DEMO_CLASS_ID)
 
   const vipRows = await db.prepare(`
     SELECT v.*
     FROM class_vip_subscriptions v
     JOIN classes c ON c.id = v.class_id
-    WHERE c.user_id = ?
-  `).all(req.userId)
+    WHERE c.user_id = ? AND c.id != ?
+  `).all(req.userId, DEMO_CLASS_ID)
 
   const vipMap = Object.fromEntries(vipRows.map(row => [row.class_id, normalizeVipRow(row)]))
 

@@ -4,13 +4,15 @@ import { db } from '../db.js'
 import { authMiddleware } from '../middleware/auth.js'
 import { grantWelcomeVipIfEligible } from '../utils/welcomeVip.js'
 import { normalizeVipRow } from './vip.js'
+import { DEMO_CLASS_ID } from '../utils/adminCleanup.js'
 
 const router = Router()
-const DEMO_CLASS_ID = 'demo-class-2026'
 
-// 获取班级列表（只返回当前用户的班级）
+// 获取班级列表（只返回当前用户自建班级，演示班仅通过 /classes/demo 访问）
 router.get('/', authMiddleware, async (req, res) => {
-  const classes = await db.prepare('SELECT * FROM classes WHERE user_id = ? ORDER BY created_at DESC').all(req.userId)
+  const classes = await db.prepare(
+    'SELECT * FROM classes WHERE user_id = ? AND id != ? ORDER BY created_at DESC'
+  ).all(req.userId, DEMO_CLASS_ID)
   res.json({ classes })
 })
 
@@ -98,6 +100,10 @@ router.put('/:id', authMiddleware, async (req, res) => {
 
 // 删除班级
 router.delete('/:id', authMiddleware, async (req, res) => {
+  if (req.params.id === DEMO_CLASS_ID) {
+    return res.status(400).json({ error: '演示班级不能删除' })
+  }
+
   const classInfo = await db.prepare('SELECT user_id FROM classes WHERE id = ?').get(req.params.id)
 
   if (!classInfo) {

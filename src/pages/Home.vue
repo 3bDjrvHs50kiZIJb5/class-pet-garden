@@ -228,7 +228,7 @@ async function enterDemoGarden() {
     students.value = res.data.students || []
     setCurrentClassStudentCount(students.value.length)
     applyStudentSort()
-    saveCurrentClassId(demoClass.id, user.value?.id)
+    persistCurrentClassId(demoClass.id)
     syncDemoModeFromCurrentClass()
     evaluationRecords.value = res.data.records || []
     totalRecords.value = res.data.total || evaluationRecords.value.length
@@ -328,18 +328,22 @@ async function refreshClassSwitcherOptions() {
   try {
     const res = await api.get('/classes')
     for (const cls of res.data.classes || []) {
-      merged.set(cls.id, cls)
+      if (cls.id !== DEMO_CLASS_ID) {
+        merged.set(cls.id, cls)
+      }
     }
   } catch (error) {
     console.error('加载班级列表失败:', error)
   }
 
-  try {
-    const demoRes = await api.get('/classes/demo', { headers: { Authorization: 'Bearer guest' } })
-    const demoClass = demoRes.data.class as Class
-    merged.set(demoClass.id, demoClass)
-  } catch (error) {
-    console.error('加载演示班级信息失败:', error)
+  if (isDemoMode.value) {
+    try {
+      const demoRes = await api.get('/classes/demo', { headers: { Authorization: 'Bearer guest' } })
+      const demoClass = demoRes.data.class as Class
+      merged.set(demoClass.id, demoClass)
+    } catch (error) {
+      console.error('加载演示班级信息失败:', error)
+    }
   }
 
   classes.value = Array.from(merged.values()).sort((a, b) => {
@@ -347,6 +351,22 @@ async function refreshClassSwitcherOptions() {
     if (b.id === DEMO_CLASS_ID) return 1
     return (b.created_at || 0) - (a.created_at || 0)
   })
+}
+
+function persistCurrentClassId(classId: string) {
+  if (!isGuest.value && classId === DEMO_CLASS_ID) {
+    return
+  }
+  saveCurrentClassId(classId, user.value?.id)
+}
+
+function resolveSavedClassIdForAccount() {
+  const savedClassId = getSavedClassId(user.value?.id)
+  if (!savedClassId) return null
+  if (!isGuest.value && savedClassId === DEMO_CLASS_ID) {
+    return null
+  }
+  return savedClassId
 }
 
 function exitDemoToLanding() {
@@ -721,7 +741,7 @@ async function loadClasses() {
   try {
     await refreshClassSwitcherOptions()
     if (classes.value.length > 0) {
-      const savedClassId = getSavedClassId(user.value?.id)
+      const savedClassId = resolveSavedClassIdForAccount()
       const savedClass = savedClassId ? classes.value.find(c => c.id === savedClassId) : null
       
       if (savedClass) {
@@ -743,8 +763,9 @@ async function selectClass(cls: Class) {
   currentClass.value = cls
   isDemoMode.value = cls.id === DEMO_CLASS_ID
   showAllStudents.value = false
-  saveCurrentClassId(cls.id, user.value?.id)
+  persistCurrentClassId(cls.id)
   await loadStudents(true)
+  await refreshClassSwitcherOptions()
   void loadClassDashboardExtras()
 }
 
@@ -1423,7 +1444,7 @@ onMounted(async () => {
       await openStudentFromQuery()
       return
     }
-    if (getSavedClassId(user.value?.id) === DEMO_CLASS_ID) {
+    if (isGuest.value && getSavedClassId(user.value?.id) === DEMO_CLASS_ID) {
       await enterDemoGarden()
       await openStudentFromQuery()
       return

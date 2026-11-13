@@ -8,6 +8,7 @@ import { sendTeacherRegisterNotice } from '../services/showDocPushService.js'
 import { isValidPhone } from '../utils/phone.js'
 import { markWelcomeVipEligible } from '../utils/welcomeVip.js'
 import { registerRateLimit, loginRateLimit } from '../middleware/rateLimit.js'
+import { DEMO_CLASS_ID } from '../utils/adminCleanup.js'
 
 const router = Router()
 
@@ -96,24 +97,24 @@ router.get('/me', authMiddleware, async (req, res) => {
       c.updated_at,
       (SELECT COUNT(*) FROM students s WHERE s.class_id = c.id) AS student_count
     FROM classes c
-    WHERE c.user_id = ?
+    WHERE c.user_id = ? AND c.id != ?
     ORDER BY c.created_at DESC
-  `).all(req.userId)
+  `).all(req.userId, DEMO_CLASS_ID)
 
   const evaluationCountRow = await db.prepare(`
     SELECT COUNT(*) AS count
     FROM evaluation_records er
     JOIN classes c ON er.class_id = c.id
-    WHERE c.user_id = ?
-  `).get(req.userId)
+    WHERE c.user_id = ? AND c.id != ?
+  `).get(req.userId, DEMO_CLASS_ID)
   const evaluationCount = evaluationCountRow?.count || 0
 
   const taskCountRow = await db.prepare(`
     SELECT COUNT(*) AS count
     FROM class_tasks t
     JOIN classes c ON t.class_id = c.id
-    WHERE c.user_id = ?
-  `).get(req.userId)
+    WHERE c.user_id = ? AND c.id != ?
+  `).get(req.userId, DEMO_CLASS_ID)
   const taskCount = taskCountRow?.count || 0
 
   const badgeCountRow = await db.prepare(`
@@ -121,8 +122,8 @@ router.get('/me', authMiddleware, async (req, res) => {
     FROM badges b
     JOIN students s ON b.student_id = s.id
     JOIN classes c ON s.class_id = c.id
-    WHERE c.user_id = ?
-  `).get(req.userId)
+    WHERE c.user_id = ? AND c.id != ?
+  `).get(req.userId, DEMO_CLASS_ID)
   const badgeCount = badgeCountRow?.count || 0
 
   const studentCount = classes.reduce((sum, cls) => sum + (cls.student_count || 0), 0)
