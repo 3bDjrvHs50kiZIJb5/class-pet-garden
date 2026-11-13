@@ -1,9 +1,10 @@
 ---
 name: class-pet-garden
 description: >-
-  班级宠物园开发与部署：Vue3 + Express + MySQL、Cursor Cloud Agent 环境（MariaDB + npm start）、
-  本地/云端预览、GHCR Docker 发版（v* 标签）。在用户问启动项目、云开发预览、environment.json、
-  npm ci 失败、MariaDB、docker compose、打 tag 发镜像时使用。
+  班级宠物园开发与部署：Vue3 + Express + MySQL、本地/云端预览、GHCR Docker 发版（v* 标签）。
+  Cloud Agent 环境构建与 MariaDB 启动见 class-pet-garden-cloud-env skill。
+  在用户问启动项目、docker compose、打 tag 发镜像时使用；environment.json / Trigger build
+  / 配置云环境时优先读取 cloud-env skill。
 ---
 
 # 班级宠物园（Class Pet Garden）Agent 指南
@@ -32,31 +33,8 @@ npm ci && npm ci --prefix server
 npm start          # concurrently: dev + server
 ```
 
-**仅 Cloud Agent 且已配置环境时：**
-
-```bash
-bash .cursor/cloud-agent-install.sh   # 首次 / Build 阶段
-bash .cursor/start.sh                   # MariaDB + tmux 内 npm start
-# 日志：/tmp/class-pet-garden/dev.log ；会话：tmux attach -t class_pet_garden
-```
-
-## Cloud Agent 环境（Config as code）
-
-| 文件 | 职责 |
-|------|------|
-| `.cursor/environment.json` | `install` / `start` / `ports` |
-| `.cursor/cloud-agent-install.sh` | apt 安装 MariaDB + `npm ci` |
-| `.cursor/start.sh` | 启库、建 `classpets` 用户、tmux `npm start` |
-
-用户流程：合并 `.cursor/` → 仪表盘绑定 `environment.json` → **Trigger build** → **新开 Agent**（旧 Agent 不会重跑 `start`）。
-
-**Secrets（可选）：** `TOKEN_SECRET` 覆盖启动脚本中的开发默认值。
-
-**常见失败：**
-
-1. `npm ci` / lock 与 `package.json` 不一致 → 本地 `npm install` 同步 `package-lock.json` 并提交。
-2. `install` 失败后仍执行 `start.sh` → `concurrently: not found`；先修好依赖再 `start.sh`。
-3. 无 Docker 的 Cloud VM → 用 MariaDB，不要用 `docker compose up mysql`（除非镜像内已装 Docker）。
+**Cloud Agent（已 Save 环境）：** 启动由 `.cursor/start.sh` 自动完成；手动排错见  
+`.cursor/skills/class-pet-garden-cloud-env/SKILL.md`。
 
 ## 生产 Docker
 
@@ -75,4 +53,6 @@ bash .cursor/start.sh                   # MariaDB + tmux 内 npm start
 1. 改 Cloud 环境后提醒用户 **新开会话** 或查看 `/tmp/cursor/start-user/start-user.log`。
 2. 不在聊天或 skill 中写入真实 `TOKEN_SECRET`、生产数据库密码。
 3. 验证功能：`npm run build`（`vue-tsc` + vite）；无自动化 E2E 时可视需要手动打开 3001。
-4. 分支命名（Cloud Agent 任务）：`cursor/<描述>-afcc`。
+4. 分支命名（Cloud Agent 任务）：`cursor/<描述>-2140`。
+5. **新建/更新 Cloud 环境**：阅读并遵循  
+   `.cursor/skills/class-pet-garden-cloud-env/SKILL.md`。
