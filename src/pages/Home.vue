@@ -223,7 +223,7 @@ async function enterDemoGarden() {
     const demoClass = res.data.class as Class
     isDemoMode.value = true
     showAllStudents.value = false
-    classes.value = [demoClass, ...classes.value.filter(cls => cls.id !== demoClass.id)]
+    await refreshClassSwitcherOptions()
     currentClass.value = demoClass
     students.value = res.data.students || []
     setCurrentClassStudentCount(students.value.length)
@@ -304,9 +304,49 @@ function toggleSortMenu() {
   showSortMenu.value = !showSortMenu.value
 }
 
+const classSwitcherInteractive = computed(
+  () => classes.value.length > 1 || isDemoMode.value,
+)
+
 function toggleClassMenu() {
-  if (classes.value.length <= 1) return
+  if (!classSwitcherInteractive.value) return
   showClassMenu.value = !showClassMenu.value
+}
+
+async function refreshClassSwitcherOptions() {
+  const merged = new Map<string, Class>()
+
+  try {
+    const res = await api.get('/classes')
+    for (const cls of res.data.classes || []) {
+      merged.set(cls.id, cls)
+    }
+  } catch (error) {
+    console.error('加载班级列表失败:', error)
+  }
+
+  try {
+    const demoRes = await api.get('/classes/demo', { headers: { Authorization: 'Bearer guest' } })
+    const demoClass = demoRes.data.class as Class
+    merged.set(demoClass.id, demoClass)
+  } catch (error) {
+    console.error('加载演示班级信息失败:', error)
+  }
+
+  classes.value = Array.from(merged.values()).sort((a, b) => {
+    if (a.id === DEMO_CLASS_ID) return -1
+    if (b.id === DEMO_CLASS_ID) return 1
+    return (b.created_at || 0) - (a.created_at || 0)
+  })
+}
+
+function exitDemoToLanding() {
+  closeClassMenu()
+  applyLandingPage()
+  currentClass.value = null
+  students.value = []
+  classes.value = []
+  setCurrentClassStudentCount(null)
 }
 
 function closeClassMenu() {
@@ -1491,7 +1531,7 @@ onUnmounted(() => {
               <button
                 type="button"
                 class="inline-flex h-[42px] max-w-[min(100%,280px)] items-center gap-2 rounded-full bg-[#fff1e8] px-3 text-sm font-semibold text-[#b85e25] transition"
-                :class="classes.length > 1 ? 'cursor-pointer pr-2 hover:bg-[#ffe8da]' : 'cursor-default'"
+                :class="classSwitcherInteractive ? 'cursor-pointer pr-2 hover:bg-[#ffe8da]' : 'cursor-default'"
                 @click.stop="toggleClassMenu"
               >
                 <span class="material-symbols-rounded shrink-0 text-[18px] leading-none">school</span>
@@ -1499,14 +1539,14 @@ onUnmounted(() => {
                 <span class="shrink-0 text-[#d97706]/70">·</span>
                 <span class="shrink-0">{{ students.length }} 名学生</span>
                 <span
-                  v-if="classes.length > 1"
+                  v-if="classSwitcherInteractive"
                   class="material-symbols-rounded ml-0.5 shrink-0 text-[18px] leading-none text-[#d97706]/80 transition-transform"
                   :class="showClassMenu ? 'rotate-180' : ''"
                 >expand_more</span>
               </button>
 
               <div
-                v-if="showClassMenu && classes.length > 1"
+                v-if="showClassMenu && classSwitcherInteractive"
                 class="absolute left-0 top-[calc(100%+6px)] z-50 min-w-[220px] overflow-hidden rounded-2xl border border-[#f1e5db] bg-white py-1 shadow-[0_12px_36px_rgba(116,76,45,0.12)]"
                 @click.stop
               >
@@ -1520,8 +1560,22 @@ onUnmounted(() => {
                 >
                   <span class="material-symbols-rounded text-[18px] leading-none" :class="cls.id === currentClass.id ? 'text-[#d97706]' : 'text-[#c4a494]'">school</span>
                   <span class="min-w-0 flex-1 truncate">{{ cls.name }}</span>
+                  <span
+                    v-if="cls.id === DEMO_CLASS_ID"
+                    class="shrink-0 rounded-full bg-[#fff0e2] px-2 py-0.5 text-[10px] font-bold text-[#d97706]"
+                  >演示</span>
                   <span v-if="cls.id === currentClass.id" class="material-symbols-rounded text-[16px] text-[#d97706]">check</span>
                 </button>
+                <div v-if="isDemoMode && isGuest" class="border-t border-[#f1e5db] px-2 pb-1 pt-1">
+                  <button
+                    type="button"
+                    class="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-[#765f50] transition hover:bg-[#fff7f1]"
+                    @click="exitDemoToLanding"
+                  >
+                    <span class="material-symbols-rounded text-[18px] leading-none text-[#c4a494]">home</span>
+                    <span>返回首页</span>
+                  </button>
+                </div>
               </div>
             </div>
             <label class="flex h-[42px] min-w-[220px] flex-1 items-center gap-2 rounded-xl border border-[#edeff2] bg-white px-3 text-sm text-[#888]" :class="stampDimClass">
