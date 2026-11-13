@@ -60,20 +60,9 @@ bash .cursor/start.sh                   # MariaDB + tmux 内 npm start
 
 ## 生产 Docker
 
-- 构建：`Dockerfile` 多阶段（前端 `vite build` + `node server/index.js`）
-- Compose：`docker-compose.yml`（`mysql` + `app` 镜像）
-- 默认应用镜像：`ghcr.io/3bdjrvhs50kizijb5/class-pet-garden:latest`
-
-**发版（Git 标签触发 CI，非本机 docker tag）：**
-
-```bash
-git checkout main && git pull
-git tag -a v0.1.9 -m "Release v0.1.9"
-git push origin v0.1.9
-```
-
-Workflow：`.github/workflows/docker.yml`（`v*` 推送 → GHCR，标签含 semver、`latest`、commit sha）。  
-打 tag 前应把待发布改动**合并到 `main`**；标签打在目标提交上。
+- 构建：`Dockerfile`；Compose：`docker-compose.yml`；默认镜像 `ghcr.io/3bdjrvhs50kizijb5/class-pet-garden:latest`
+- **打标签、发 GHCR 镜像、部署指定版本**：读取并遵循  
+  `.cursor/skills/class-pet-garden-docker-release/SKILL.md`
 
 ## 前端约定
 
