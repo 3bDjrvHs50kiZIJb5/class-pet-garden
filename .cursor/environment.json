@@ -1,0 +1,10 @@
+{
+  "name": "班级宠物园（MariaDB + 全栈预览）",
+  "user": "ubuntu",
+  "install": "bash .cursor/cloud-agent-install.sh",
+  "start": "bash .cursor/start.sh",
+  "ports": [
+    { "port": 3001, "name": "vite" },
+    { "port": 3002, "name": "api" }
+  ]
+}
