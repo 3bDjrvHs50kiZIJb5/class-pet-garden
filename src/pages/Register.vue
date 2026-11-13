@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import { isValidPhone } from '@/utils/phone'
+import SlideVerify from '@/components/SlideVerify.vue'
 
 const router = useRouter()
 const { api, setUser, isGuest } = useAuth()
@@ -15,6 +16,7 @@ const confirmPassword = ref('')
 const agreed = ref(false)
 const loading = ref(false)
 const error = ref('')
+const showSlideVerify = ref(false)
 
 const features = [
   { icon: 'rate_review', title: '快速评价', desc: '老师轻点完成课堂反馈' },
@@ -28,29 +30,38 @@ onMounted(() => {
   }
 })
 
-async function handleSubmit() {
+function validateForm(): boolean {
   error.value = ''
   if (!phone.value.trim() || !password.value) {
     error.value = '请输入手机号和密码'
-    return
+    return false
   }
   if (!isValidPhone(phone.value)) {
     error.value = '请输入正确的手机号'
-    return
+    return false
   }
   if (password.value.length < 6) {
     error.value = '密码至少6位'
-    return
+    return false
   }
   if (password.value !== confirmPassword.value) {
     error.value = '两次密码不一致'
-    return
+    return false
   }
   if (!agreed.value) {
     error.value = '请先阅读并同意用户协议'
-    return
+    return false
   }
+  return true
+}
 
+function handleSubmit() {
+  if (!validateForm() || loading.value) return
+  showSlideVerify.value = true
+}
+
+async function submitRegister() {
+  showSlideVerify.value = false
   loading.value = true
   try {
     const res = await api.post('/auth/register', {
@@ -188,5 +199,11 @@ async function handleSubmit() {
         </div>
       </section>
     </div>
+
+    <SlideVerify
+      :show="showSlideVerify"
+      @success="submitRegister"
+      @close="showSlideVerify = false"
+    />
   </div>
 </template>
