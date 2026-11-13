@@ -9,8 +9,8 @@ description: >-
 
 **先读个人 skill（跨项目通用）：**
 
-- 本机：`~/.cursor/skills/cloud-agent-fullstack-dev-env/SKILL.md`
-- 安装包副本：`personal-skills/cloud-agent-fullstack-dev-env/`（复制或 symlink 到 `~/.cursor/skills/`）
+- 本仓库 `/` 列表：`.cursor/skills/cloud-agent-fullstack-dev-env/`
+- 其它项目或全局：`~/.cursor/skills/cloud-agent-fullstack-dev-env/`（从 `personal-skills/` 复制）
 - Cloud Agent：在 Settings → Agents 开启 **Sync Skills for Cloud Agents** 后同步个人 skill
 
 通用步骤（发现 → install/start 三件套 → Build → 新开 Agent）**不要在本文件重复维护**，以 `cloud-agent-fullstack-dev-env` 为准。
