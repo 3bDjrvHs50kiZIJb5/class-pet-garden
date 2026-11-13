@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, nextTick, defineAsyncComponent } from 'vue'
-import { useRoute, useRouter, onBeforeRouteUpdate, type LocationQuery, type LocationQueryRaw } from 'vue-router'
+import { useRoute, useRouter, onBeforeRouteUpdate, type LocationQueryRaw } from 'vue-router'
 import { PET_TYPES, getPetType, getLevelProgress, calculateLevel, getPetLevelImage, getPetLevel1Image, isMythicalPet, type PetType } from '@/data/pets'
 import PetImage from '@/components/PetImage.vue'
-const AppShell = defineAsyncComponent(() => import('@/components/AppShell.vue'))
+import AppShell from '@/components/AppShell.vue'
+import { prefetchDemoGarden, takeDemoGardenPrefetch, type DemoGardenPayload } from '@/utils/demoPrefetch'
 const GrowthAreaChart = defineAsyncComponent(() => import('@/components/GrowthAreaChart.vue'))
 const ConfirmDialog = defineAsyncComponent(() => import('@/components/ConfirmDialog.vue'))
 const BgmTrackPicker = defineAsyncComponent(() => import('@/components/BgmTrackPicker.vue'))
 const RankListRow = defineAsyncComponent(() => import('@/components/ranking/RankListRow.vue'))
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
-import { useLandingGate } from '@/composables/useLandingGate'
 import { useStudentImport, STUDENTS_IMPORTED_EVENT, setCurrentClassStudentCount } from '@/composables/useStudentImport'
 import { getSavedClassId, saveCurrentClassId, useClassVip } from '@/composables/useClassVip'
 import { sortRanking } from '@/utils/ranking'
@@ -46,7 +46,6 @@ const toast = useToast()
 
 // 用户认证
 const { isGuest, username, logout, api, user } = useAuth()
-const { shouldShowLanding } = useLandingGate()
 const route = useRoute()
 const router = useRouter()
 
@@ -104,19 +103,9 @@ const showAllStudents = ref(false)
 const studentViewMode = ref<'grid' | 'list'>('grid')
 const cardEvalFilterPositive = ref<boolean | null>(null)
 const isRefreshing = ref(false)
-const showLanding = ref(true)
 const isDemoMode = ref(false)
 const DEMO_CLASS_ID = 'demo-class-2026'
-
-const LANDING_HEADLINES = [
-  '孩子的专属宠物，言行驱动成长。',
-  '老师轻点评分，学生宠物同步成长。',
-  '一声表扬，一只宠物，一份看得见的成长。',
-] as const
-
-const landingHeadline = ref(
-  LANDING_HEADLINES[Math.floor(Math.random() * LANDING_HEADLINES.length)]!,
-)
+const workbenchBooting = ref(true)
 
 interface ActiveTaskSummary {
   id: string
@@ -132,38 +121,14 @@ function isPetAdoptionLocked(pet: PetType) {
   return isMythicalPet(pet.id) && !currentClassVipActive.value
 }
 
-function enterGarden() {
-  showLanding.value = false
-  if (route.name !== 'dashboard') {
-    const query: LocationQueryRaw = {}
-    const studentId = route.query.studentId
-    if (typeof studentId === 'string' && studentId) {
-      query.studentId = studentId
-    }
-    router.replace({ name: 'dashboard', query })
+function stripDemoQueryFromRoute() {
+  if (route.query.demo !== '1') return
+  const query: LocationQueryRaw = {}
+  const studentId = route.query.studentId
+  if (typeof studentId === 'string' && studentId) {
+    query.studentId = studentId
   }
-}
-
-function wantsLandingPage(query: LocationQuery) {
-  return query.landing === '1'
-}
-
-function applyLandingPage() {
-  showLanding.value = true
-  isDemoMode.value = false
-}
-
-function openLandingFromQuery(query: LocationQuery, path: string) {
-  if (!wantsLandingPage(query)) return false
-  applyLandingPage()
-  const nextQuery: LocationQueryRaw = {}
-  for (const [key, value] of Object.entries(query)) {
-    if (key !== 'landing') {
-      nextQuery[key] = value
-    }
-  }
-  router.replace({ path, query: nextQuery })
-  return true
+  router.replace({ name: 'dashboard', query })
 }
 
 function formatProfileDate(timestamp?: number) {
@@ -225,15 +190,10 @@ function requestConfigForCurrentClass() {
     : undefined
 }
 
-async function enterDemoGardenWithLoading() {
-  prefetchDemoGarden()
-  await enterDemoGarden()
-}
-
 async function enterDemoGarden() {
   try {
-    const pending = demoGardenPrefetch
-    demoGardenPrefetch = null
+    prefetchDemoGarden()
+    const pending = takeDemoGardenPrefetch()
     const res = await (pending ?? api.get<DemoGardenPayload>('/classes/demo', {
       headers: { Authorization: 'Bearer guest' },
     }))
@@ -242,22 +202,20 @@ async function enterDemoGarden() {
     showAllStudents.value = false
     currentClass.value = demoClass
     classes.value = [demoClass]
-    students.value = res.data.students || []
+    students.value = (res.data.students || []) as Student[]
     setCurrentClassStudentCount(students.value.length)
     applyStudentSort()
     persistCurrentClassId(demoClass.id)
     syncDemoModeFromCurrentClass()
-    evaluationRecords.value = res.data.records || []
+    evaluationRecords.value = (res.data.records || []) as EvaluationRecord[]
     totalRecords.value = res.data.total || evaluationRecords.value.length
     todayEvaluationCount.value = evaluationRecords.value.length
-    enterGarden()
-    isLoading.value = false
+    stripDemoQueryFromRoute()
     void refreshClassSwitcherOptions()
     void loadClassDashboardExtras()
   } catch (error) {
     console.error('加载演示班级失败:', error)
     toast.error('演示班级暂时无法加载，请稍后重试')
-    isLoading.value = false
   }
 }
 
@@ -303,29 +261,12 @@ const levelUpPhase = ref<'show-prev' | 'transition' | 'show-current'>('show-prev
 const showLevelUpAnimation = ref(false)
 const levelUpInfo = ref({ name: '', level: 0, petType: '', prevLevel: 0 })
 const isLoaded = ref(false)
-const isLoading = ref(false)
-
-interface DemoGardenPayload {
-  class: Class
-  students: Student[]
-  records?: EvaluationRecord[]
-  total?: number
-}
 
 interface EvaluationRecord {
   id: string
   points: number
   reason?: string
   timestamp?: number
-}
-
-let demoGardenPrefetch: Promise<{ data: DemoGardenPayload }> | null = null
-
-function prefetchDemoGarden() {
-  if (demoGardenPrefetch) return
-  demoGardenPrefetch = api.get<DemoGardenPayload>('/classes/demo', {
-    headers: { Authorization: 'Bearer guest' },
-  })
 }
 
 // 图片加载状态
@@ -414,11 +355,12 @@ function resolveSavedClassIdForAccount() {
 
 function exitDemoToLanding() {
   closeClassMenu()
-  applyLandingPage()
+  isDemoMode.value = false
   currentClass.value = null
   students.value = []
   classes.value = []
   setCurrentClassStudentCount(null)
+  router.push({ path: '/', query: { landing: '1' } })
 }
 
 function closeClassMenu() {
@@ -813,7 +755,6 @@ async function selectClass(cls: Class) {
   showAllStudents.value = false
   persistCurrentClassId(cls.id)
   await loadStudents(true)
-  isLoading.value = false
   void refreshClassSwitcherOptions()
   void loadClassDashboardExtras()
 }
@@ -1482,60 +1423,45 @@ async function handleStudentsImported(event?: Event) {
 async function bootstrapWorkbenchRoute(targetRoute = route) {
   const wantsDemo = targetRoute.query.demo === '1'
   if (wantsDemo) {
-    isLoading.value = true
     const studentId = targetRoute.query.studentId
     router.replace({
       name: 'dashboard',
-      query: typeof studentId === 'string' ? { studentId } : {}
+      query: typeof studentId === 'string' ? { studentId } : {},
     })
     await enterDemoGarden()
-    await openStudentFromQuery()
+    void openStudentFromQuery()
     return
   }
   if (isGuest.value && getSavedClassId(user.value?.id) === DEMO_CLASS_ID) {
-    isLoading.value = true
     await enterDemoGarden()
-    await openStudentFromQuery()
+    void openStudentFromQuery()
     return
   }
-  isLoading.value = true
   await loadClasses()
-  await openStudentFromQuery()
+  void openStudentFromQuery()
 }
 
 onBeforeRouteUpdate(async (to) => {
-  if (openLandingFromQuery(to.query, to.path)) return
-  if (to.name === 'home' && wantsLandingPage(to.query)) {
-    applyLandingPage()
-    return
-  }
-  if (to.name === 'dashboard' && showLanding.value) {
-    showLanding.value = false
-    await bootstrapWorkbenchRoute(to)
+  if (to.name !== 'dashboard') return
+  if (to.query.demo === '1' && !isDemoMode.value) {
+    workbenchBooting.value = true
+    try {
+      await enterDemoGarden()
+      void openStudentFromQuery()
+    } finally {
+      workbenchBooting.value = false
+    }
   }
 })
 
 onMounted(async () => {
   window.addEventListener(STUDENTS_IMPORTED_EVENT, handleStudentsImported)
   window.addEventListener('click', handleDocumentClick)
+  prefetchDemoGarden()
   try {
-    if (openLandingFromQuery(route.query, route.path)) {
-      return
-    }
-    if (route.name === 'home') {
-      const shouldLand = await shouldShowLanding()
-      showLanding.value = shouldLand
-      if (shouldLand) {
-        prefetchDemoGarden()
-        return
-      }
-    } else if (route.name === 'dashboard') {
-      showLanding.value = false
-    }
-
     await bootstrapWorkbenchRoute()
   } finally {
-    isLoading.value = false
+    workbenchBooting.value = false
     nextTick(() => {
       isLoaded.value = true
     })
@@ -1550,90 +1476,11 @@ onUnmounted(() => {
 
 <template>
   <div class="min-h-screen bg-[#fffdfb] font-sans text-slate-800">
-    <Transition>
-      <div v-if="isLoading && !showLanding" class="fixed inset-0 z-[200] flex items-center justify-center bg-[#fffaf5]">
-        <div class="text-center">
-          <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-[24px] bg-orange-100 text-3xl shadow-sm">🐾</div>
-          <p class="mt-4 text-sm font-semibold text-slate-600">正在打开班级宠物园</p>
-        </div>
-      </div>
-    </Transition>
-
-    <template v-if="showLanding">
-      <main class="overflow-hidden bg-white text-[#1a1a1a]">
-        <section class="flex items-center justify-center px-5 pt-16 pb-8 sm:px-8 sm:pb-10">
-          <div class="flex w-full max-w-[860px] flex-col items-center text-center">
-            <div class="flex h-[34px] items-center justify-center gap-2 rounded-full bg-[#fff3ec] px-4">
-              <span class="h-2 w-2 rounded-full bg-[#ff5c00]"></span>
-              <span class="font-brand text-sm font-bold text-[#ff5c00]">班级宠物园</span>
-            </div>
-            <h1 class="mt-[22px] max-w-[820px] font-serif text-5xl font-bold leading-[0.98] text-[#1a1a1a] sm:text-[68px]">{{ landingHeadline }}</h1>
-            <p class="mt-[22px] max-w-[660px] text-base leading-[1.45] text-[#666] sm:text-xl">老师快速加分，学生的宠物随习惯一起升级。</p>
-            <div class="mt-[22px] flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <button type="button" class="font-brand h-12 rounded-full bg-[#ff5c00] px-8 text-[15px] font-bold text-white shadow-[0_16px_40px_rgba(0,0,0,0.07)] transition hover:bg-[#e95300]" @mouseenter="prefetchDemoGarden" @focus="prefetchDemoGarden" @click="enterDemoGardenWithLoading">进入演示班级</button>
-              <router-link to="/register" class="font-brand inline-flex h-12 items-center rounded-full border border-[#ff5c00] bg-white px-8 text-[15px] font-bold text-[#ff5c00] transition hover:bg-[#fff3ec]">我是老师，创建新班级</router-link>
-            </div>
-            <div class="mt-[22px] flex h-[86px] w-full max-w-[420px] items-center justify-center gap-[18px] rounded-xl border border-[#f3f4f6] bg-white px-[18px] py-[14px] text-left shadow-[0_16px_40px_rgba(0,0,0,0.07)]">
-              <div class="relative h-[58px] w-[58px] shrink-0 rounded-xl bg-[#fff3ec]">
-                <span class="absolute left-[15px] top-[14px] h-7 w-7 rounded-full bg-[#ff8533]"></span>
-                <span class="absolute left-3 top-[10px] h-2.5 w-2.5 rounded-full bg-[#ff8533]"></span>
-                <span class="absolute right-3 top-[10px] h-2.5 w-2.5 rounded-full bg-[#ff8533]"></span>
-              </div>
-              <div class="min-w-0">
-                <p class="font-brand text-sm font-bold text-[#1a1a1a]">评价一次，成长一点</p>
-                <p class="mt-1 text-sm leading-5 text-[#888]">积分、等级、徽章都围绕学生的日常表现。</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="flex flex-col items-center justify-center gap-[18px] px-5 py-10 sm:h-[700px] sm:px-8 lg:h-auto lg:min-h-[820px] lg:gap-6 lg:py-14">
-          <div class="text-center">
-            <p class="font-brand text-sm leading-5 font-semibold text-[#ff5c00]">产品截图</p>
-            <h2 class="mt-4 font-serif text-3xl font-bold leading-[1.05] text-[#1a1a1a] sm:text-[34px]">把喂养、成长与班级记录放在同一屏。</h2>
-          </div>
-          <div class="flex w-full max-w-[1040px] items-center justify-center rounded-xl border border-[#f3f4f6] bg-white p-3 shadow-[0_16px_40px_rgba(0,0,0,0.07)] sm:h-[590px] sm:p-4 lg:max-w-[1180px] lg:h-[660px] lg:p-5 xl:max-w-[1280px] xl:h-[720px]">
-            <img src="/class-pet-garden-product.png" alt="班级宠物园产品截图" class="w-full rounded-lg sm:h-full sm:object-contain" loading="lazy" decoding="async" />
-          </div>
-        </section>
-
-        <section class="relative flex min-h-[230px] flex-col items-center justify-center gap-5 px-5 py-12 sm:px-8">
-          <span class="absolute left-[18%] top-[42px] h-[7px] w-[7px] rounded-full bg-[#ff8533]"></span>
-          <span class="absolute right-[18%] top-[40px] text-base text-[#ff5c00]">✦</span>
-          <span class="absolute bottom-[34px] left-[24%] h-1 w-[18px] rotate-[-18deg] rounded-full bg-[#ff5c00]"></span>
-          <div class="text-center">
-            <p class="font-brand text-sm leading-5 font-semibold text-[#ff5c00]">CLASS PET GARDEN</p>
-            <h2 class="mt-4 font-serif text-3xl font-bold leading-[1.05] text-[#1a1a1a] sm:text-[34px]">让班级反馈，变成孩子看得见的成长</h2>
-          </div>
-          <div class="flex w-full max-w-[900px] flex-col gap-6 md:flex-row md:items-center md:gap-6">
-            <article class="flex flex-1 items-center gap-3"><div class="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-[#fff3eb] text-[#ff5c00]"><span class="material-symbols-rounded text-[20px]">rate_review</span></div><div><h3 class="text-[17px] font-[650]">快速评价</h3><p class="font-brand mt-1 text-sm leading-[1.25] text-[#666]">老师轻点完成课堂反馈</p></div></article>
-            <div class="hidden h-12 w-px bg-[#f3f4f6] md:block"></div>
-            <article class="flex flex-1 items-center gap-3"><div class="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-[#fff3eb] text-[#ff5c00]"><span class="material-symbols-rounded text-[20px]">pets</span></div><div><h3 class="text-[17px] font-[650]">宠物成长</h3><p class="font-brand mt-1 text-sm leading-[1.25] text-[#666]">每次进步都喂养专属小宠物</p></div></article>
-            <div class="hidden h-12 w-px bg-[#f3f4f6] md:block"></div>
-            <article class="flex flex-1 items-center gap-3"><div class="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-[#fff3eb] text-[#ff5c00]"><span class="material-symbols-rounded text-[20px]">emoji_events</span></div><div><h3 class="text-[17px] font-[650]">班级荣誉</h3><p class="font-brand mt-1 text-sm leading-[1.25] text-[#666]">把个人努力汇成班级勋章</p></div></article>
-          </div>
-        </section>
-
-        <footer class="flex h-[210px] items-center justify-center bg-[#f7f8fa] px-5 text-center sm:px-8">
-          <div class="flex flex-col items-center gap-[14px]">
-            <h2 class="font-serif text-3xl font-bold text-[#1a1a1a] sm:text-[34px]">先从一个班级开始。</h2>
-            <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-base">
-              <span class="text-[#666]">导入学生，设置评价规则，让成长被看见。</span>
-              <button type="button" class="font-brand font-bold text-[#ff5c00] underline-offset-2 transition hover:text-[#e95300] hover:underline" @click="enterDemoGarden">进入演示班级</button>
-              <span class="text-[#ccc]">·</span>
-              <router-link to="/register" class="font-brand font-bold text-[#ff5c00] underline-offset-2 transition hover:text-[#e95300] hover:underline">我是老师，创建新班级</router-link>
-            </div>
-            <p class="font-brand text-sm text-[#888]">© 2026 班级宠物园。保留所有权利。</p>
-          </div>
-        </footer>
-      </main>
-    </template>
-
-    <template v-else>
-      <AppShell active-page="dashboard" title="班级工作台" :navigation-dimmed="stampMode">
+    <AppShell active-page="dashboard" title="班级工作台" :navigation-dimmed="stampMode">
         <div class="flex min-w-0 flex-col gap-5" :class="stampMode ? 'pb-44 xl:pb-0' : ''">
           <header class="relative flex min-h-[62px] flex-wrap items-center gap-3">
-            <div v-if="currentClass" class="relative" data-class-switcher :class="stampDimClass">
+            <div v-if="workbenchBooting && !currentClass" class="h-[42px] w-[200px] animate-pulse rounded-full bg-[#f5f0eb]" aria-hidden="true" />
+            <div v-else-if="currentClass" class="relative" data-class-switcher :class="stampDimClass">
               <button
                 type="button"
                 class="inline-flex h-[42px] max-w-[min(100%,280px)] items-center gap-2 rounded-full bg-[#fff1e8] px-3 text-sm font-semibold text-[#b85e25] transition"
@@ -1714,7 +1561,18 @@ onUnmounted(() => {
 
           <div class="flex min-w-0 flex-col gap-5 xl:flex-row">
             <main class="min-w-0 flex-1 space-y-[14px]">
-            <template v-if="classes.length">
+            <section
+              v-if="workbenchBooting"
+              class="animate-pulse space-y-[14px]"
+              aria-busy="true"
+              aria-label="工作台加载中"
+            >
+              <div class="grid grid-cols-2 gap-3 xl:grid-cols-4">
+                <div v-for="n in 4" :key="n" class="h-[88px] rounded-[20px] bg-[#f5f0eb]" />
+              </div>
+              <div class="h-[360px] rounded-[18px] border border-[#f0e7dd] bg-[#faf7f4]" />
+            </section>
+            <template v-else-if="classes.length">
               <section class="grid grid-cols-2 gap-3 xl:grid-cols-4" :class="stampDimClass">
                 <article class="relative overflow-hidden rounded-[20px] border border-orange-200/70 bg-gradient-to-br from-[#fff7ea] to-[#ffe9bf] p-3 shadow-[0_8px_18px_rgba(0,0,0,0.04)] xl:p-[18px_20px]"><div class="flex items-center gap-2 xl:gap-3.5"><span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#ffe0a3] text-[#ff7a1a] xl:h-[52px] xl:w-[52px]"><span class="material-symbols-rounded text-[18px] xl:text-[22px]">emoji_events</span></span><div class="min-w-0"><p class="text-[13px] font-bold xl:text-[15px]">班级总积分</p><p class="font-mono text-2xl font-extrabold text-[#ff7a1a] xl:text-[31px]">{{ totalClassPoints }}</p><p class="text-xs leading-4 text-[#9a5a2b] xl:text-sm">{{ students.length }} 位学生共同积累</p></div></div></article>
                 <article class="relative overflow-hidden rounded-[20px] border border-rose-200/70 bg-gradient-to-br from-[#fff1f5] to-[#ffd9e3] p-3 shadow-[0_8px_18px_rgba(0,0,0,0.04)] xl:p-[18px_20px]"><div class="flex items-center gap-2 xl:gap-3.5"><span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#ffc0d0] text-[#f43f75] xl:h-[52px] xl:w-[52px]"><span class="material-symbols-rounded text-[18px] xl:text-[22px]">rate_review</span></span><div class="min-w-0"><p class="text-[13px] font-bold xl:text-[15px]">今日评价次数</p><p class="font-mono text-2xl font-extrabold text-[#f43f75] xl:text-[31px]">{{ todayEvaluationCount }}</p><p class="text-xs leading-4 text-[#a84b65] xl:text-sm">记录每一个闪光瞬间</p></div></div></article>
@@ -1959,8 +1817,7 @@ onUnmounted(() => {
             </Transition>
           </div>
         </div>
-      </AppShell>
-    </template>
+    </AppShell>
 
     <Transition><div v-if="showClassModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 p-4"><div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><p class="text-sm font-bold tracking-wider text-orange-600">CLASS</p><h2 class="mt-1 font-serif text-2xl font-bold">{{ editingClass ? '编辑班级' : '创建班级' }}</h2><input v-model="newClassName" class="mt-5 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-orange-400" placeholder="例如：三年二班" @keyup.enter="editingClass ? updateClass() : createClass()" /><div class="mt-5 flex justify-end gap-2"><button type="button" class="px-4 py-2 text-sm" @click="showClassModal = false">取消</button><button type="button" class="rounded-xl bg-orange-600 px-4 py-2 text-sm font-bold text-white" @click="editingClass ? updateClass() : createClass()">确认</button></div></div></div></Transition>
     <Transition><div v-if="showStudentModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 p-4"><div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><h2 class="font-serif text-2xl font-bold">添加学生</h2><input v-model="newStudentName" class="mt-5 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-orange-400" placeholder="学生姓名" /><input v-model="newStudentNo" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-orange-400" placeholder="学号（可选）" /><div class="mt-5 flex justify-end gap-2"><button type="button" class="px-4 py-2 text-sm" @click="showStudentModal = false">取消</button><button type="button" class="rounded-xl bg-orange-600 px-4 py-2 text-sm font-bold text-white" @click="addStudent">添加</button></div></div></div></Transition>
