@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import AppShell from '@/components/AppShell.vue'
+import AdminListPagination from '@/components/admin/AdminListPagination.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { useAdminListPagination } from '@/composables/useAdminListPagination'
 import { useAdminPanel } from '@/composables/useAdminPanel'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
@@ -89,6 +91,29 @@ const filteredMembers = computed(() => {
   if (!query) return members.value
   return members.value.filter(item => item.username.toLowerCase().includes(query))
 })
+
+const vipExpiringList = computed(() => overview.value?.vipExpiringSoon ?? [])
+
+const {
+  page: classesPage,
+  pagedItems: pagedClasses,
+  total: classesListTotal,
+  setPage: setClassesPage,
+} = useAdminListPagination(filteredClasses)
+
+const {
+  page: membersPage,
+  pagedItems: pagedMembers,
+  total: membersListTotal,
+  setPage: setMembersPage,
+} = useAdminListPagination(filteredMembers)
+
+const {
+  page: vipExpiringPage,
+  pagedItems: pagedVipExpiring,
+  total: vipExpiringTotal,
+  setPage: setVipExpiringPage,
+} = useAdminListPagination(vipExpiringList)
 
 const summary = computed(() => ({
   total: classes.value.length,
@@ -631,7 +656,7 @@ onMounted(() => {
               <h3 class="font-serif text-lg font-bold text-[#422d20]">7 日内 VIP 到期</h3>
               <ul class="mt-3 space-y-2">
                 <li
-                  v-for="item in overview.vipExpiringSoon"
+                  v-for="item in pagedVipExpiring"
                   :key="item.classId"
                   class="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#fff8f2] px-4 py-3 text-sm"
                 >
@@ -639,6 +664,13 @@ onMounted(() => {
                   <span class="text-[#9a735d]">{{ formatVipPlan(item.plan) }} · {{ formatDateTime(item.expiresAt) }}</span>
                 </li>
               </ul>
+              <AdminListPagination
+                class="mt-3"
+                :total="vipExpiringTotal"
+                :page="vipExpiringPage"
+                unit="条记录"
+                @update:page="setVipExpiringPage"
+              />
             </div>
             <p v-else class="mt-5 text-sm text-[#9a735d]">暂无 7 日内到期的 VIP 班级。</p>
           </template>
@@ -724,7 +756,7 @@ onMounted(() => {
             {{ option.label }}
           </button>
           <span v-if="!loading && classes.length" class="ml-auto text-sm text-[#b0927c]">
-            显示 {{ filteredClasses.length }} / {{ classes.length }} 个班级
+            筛选结果 {{ filteredClasses.length }} / 全站 {{ classes.length }} 个班级
           </span>
         </div>
 
@@ -750,7 +782,7 @@ onMounted(() => {
 
         <div v-else class="mt-5 space-y-3">
           <article
-            v-for="item in filteredClasses"
+            v-for="item in pagedClasses"
             :key="item.id"
             class="rounded-2xl border border-[#f3ece4] bg-[#fffdfb] p-4"
           >
@@ -825,6 +857,12 @@ onMounted(() => {
               </div>
             </div>
           </article>
+          <AdminListPagination
+            :total="classesListTotal"
+            :page="classesPage"
+            unit="个班级"
+            @update:page="setClassesPage"
+          />
         </div>
         </div>
 
@@ -868,9 +906,8 @@ onMounted(() => {
           </div>
 
           <div v-else class="mt-5 space-y-3">
-            <p class="text-sm text-[#b0927c]">显示 {{ filteredMembers.length }} / {{ members.length }} 位教师</p>
             <article
-              v-for="item in filteredMembers"
+              v-for="item in pagedMembers"
               :key="item.id"
               class="rounded-2xl border border-[#f3ece4] bg-[#fffdfb] p-4"
             >
@@ -904,6 +941,12 @@ onMounted(() => {
                 </div>
               </div>
             </article>
+            <AdminListPagination
+              :total="membersListTotal"
+              :page="membersPage"
+              unit="位教师"
+              @update:page="setMembersPage"
+            />
           </div>
         </div>
       </section>
