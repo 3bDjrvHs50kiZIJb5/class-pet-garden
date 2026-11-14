@@ -95,6 +95,15 @@ app.set('trust proxy', 1)
 app.use(cors())
 app.use(express.json())
 
+if (process.env.NODE_ENV !== 'production') {
+  app.use((_req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store')
+    res.setHeader('Pragma', 'no-cache')
+    res.setHeader('Expires', '0')
+    next()
+  })
+}
+
 const ADMIN_USERNAME = 'admin'
 const ADMIN_DEFAULT_PASSWORD = process.env.ADMIN_DEFAULT_PASSWORD || 'admin!@#$'
 
