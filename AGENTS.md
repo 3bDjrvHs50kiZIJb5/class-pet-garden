@@ -16,11 +16,12 @@
 ## 构建/开发/测试命令
 
 ```bash
-# 开发（首次或 node_modules 缺失时会经 predev/preserver 自动执行 npm ci）
-npm run dev          # 启动前端开发服务器（端口 3001）
-npm run server       # 启动后端 API 服务器（端口 3002）
-npm run start        # 同时启动前后端
-npm run ensure-deps  # 手动检查并安装根目录 + server 依赖
+# 开发（npm start / npm run server 会自动安装依赖并初始化本地 MariaDB）
+npm run start        # 推荐：前后端 + 数据库一键就绪（3001 / 3002）
+npm run dev          # 仅前端（predev 自动装依赖）
+npm run server       # 仅后端（含 DB 初始化）
+npm run ensure-deps  # 仅检查并安装 npm 依赖
+# 等价：bash scripts/start-dev.sh
 
 # 生产
 npm run build        # 类型检查 + 构建前端（vue-tsc && vite build）

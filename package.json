@@ -8,9 +8,8 @@
     "dev": "vite",
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
-    "preserver": "npm run ensure-deps",
-    "server": "node --watch server/index.js",
-    "start": "concurrently \"npm run dev\" \"npm run server\"",
+    "server": "bash scripts/run-server-dev.sh",
+    "start": "bash scripts/start-dev.sh",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage"

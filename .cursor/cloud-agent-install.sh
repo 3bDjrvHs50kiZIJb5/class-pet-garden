@@ -17,5 +17,6 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   mariadb-client
 
 bash scripts/ensure-npm-deps.sh --force
+bash scripts/ensure-dev-database.sh
 
 echo ">>> Cloud Agent install 完成"

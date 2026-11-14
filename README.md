@@ -33,10 +33,7 @@
 git clone https://github.com/gaotong132/class-pet-garden.git
 cd class-pet-garden
 
-# 安装依赖
-npm install
-
-# 启动开发服务器（同时启动前端和后端）
+# 启动开发服务器（自动安装依赖、初始化 MariaDB、前后端 3001/3002）
 npm start
 
 # 或分别启动
