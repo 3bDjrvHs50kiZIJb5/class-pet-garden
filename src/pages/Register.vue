@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import { isValidPhone } from '@/utils/phone'
-import SlideVerify from '@/components/SlideVerify.vue'
+import TurnstileVerify from '@/components/TurnstileVerify.vue'
 
 const router = useRouter()
 const { api, setUser, isGuest } = useAuth()
@@ -16,7 +16,7 @@ const confirmPassword = ref('')
 const agreed = ref(false)
 const loading = ref(false)
 const error = ref('')
-const showSlideVerify = ref(false)
+const showTurnstile = ref(false)
 
 const features = [
   { icon: 'rate_review', title: '快速评价', desc: '老师轻点完成课堂反馈' },
@@ -57,16 +57,17 @@ function validateForm(): boolean {
 
 function handleSubmit() {
   if (!validateForm() || loading.value) return
-  showSlideVerify.value = true
+  showTurnstile.value = true
 }
 
-async function submitRegister() {
-  showSlideVerify.value = false
+async function submitRegister(turnstileToken: string) {
+  showTurnstile.value = false
   loading.value = true
   try {
     const res = await api.post('/auth/register', {
       username: phone.value.trim(),
-      password: password.value
+      password: password.value,
+      turnstileToken,
     })
     if (res.data.success) {
       setUser(res.data.user, res.data.token)
@@ -200,10 +201,10 @@ async function submitRegister() {
       </section>
     </div>
 
-    <SlideVerify
-      :show="showSlideVerify"
+    <TurnstileVerify
+      :show="showTurnstile"
       @success="submitRegister"
-      @close="showSlideVerify = false"
+      @close="showTurnstile = false"
     />
   </div>
 </template>

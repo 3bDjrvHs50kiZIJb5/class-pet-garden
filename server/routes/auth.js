@@ -9,12 +9,29 @@ import { isValidPhone } from '../utils/phone.js'
 import { markWelcomeVipEligible } from '../utils/welcomeVip.js'
 import { registerRateLimit, loginRateLimit } from '../middleware/rateLimit.js'
 import { DEMO_CLASS_ID } from '../utils/adminCleanup.js'
+import { verifyTurnstileToken } from '../utils/turnstile.js'
 
 const router = Router()
 
+function getClientIp(req) {
+  const forwarded = req.headers['x-forwarded-for']
+  if (typeof forwarded === 'string' && forwarded.length > 0) {
+    return forwarded.split(',')[0].trim()
+  }
+  return req.ip || ''
+}
+
 // 注册
 router.post('/register', registerRateLimit, async (req, res) => {
-  const { username, password } = req.body
+  const { username, password, turnstileToken } = req.body || {}
+
+  const turnstile = await verifyTurnstileToken(turnstileToken, {
+    remoteIp: getClientIp(req),
+    expectedAction: 'register',
+  })
+  if (!turnstile.ok) {
+    return res.status(400).json({ error: turnstile.error || '请先完成安全验证' })
+  }
 
   if (!username || !password) {
     return res.status(400).json({ error: '手机号和密码不能为空' })

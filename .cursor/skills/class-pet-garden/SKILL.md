@@ -44,7 +44,7 @@ npm start          # concurrently: dev + server
 ## 前端约定
 
 - 路径别名 `@/`
-- 注册页：提交前弹出 `SlideVerify`（`src/components/SlideVerify.vue`），验证成功后再 `POST /auth/register`
+- 注册页：提交前弹出 `TurnstileVerify`（`src/components/TurnstileVerify.vue`），验证成功后再 `POST /auth/register`（服务端 `turnstile.js` siteverify）
 - 样式：Tailwind，主色 `#ff5c00`
 
 ## Agent 操作原则

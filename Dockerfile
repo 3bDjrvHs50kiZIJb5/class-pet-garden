@@ -10,6 +10,9 @@ COPY index.html vite.config.ts tsconfig.json tsconfig.node.json tailwind.config.
 COPY src ./src
 COPY public ./public
 
+ARG VITE_TURNSTILE_SITE_KEY=0x4AAAAAAGAdkKqvKPPUtyGY
+ENV VITE_TURNSTILE_SITE_KEY=$VITE_TURNSTILE_SITE_KEY
+
 RUN npx vite build
 
 # 生产运行镜像
