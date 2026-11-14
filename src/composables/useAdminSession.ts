@@ -8,7 +8,9 @@ function readStored() {
   const expiresRaw = sessionStorage.getItem(EXPIRES_KEY)
   const expiresAt = expiresRaw ? Number(expiresRaw) : 0
   if (!token || !expiresAt || Date.now() >= expiresAt) {
-    clearAdminSession()
+    // 模块初始化阶段不能调用 clearAdminSession（refs 尚未创建）
+    sessionStorage.removeItem(STORAGE_KEY)
+    sessionStorage.removeItem(EXPIRES_KEY)
     return { token: '', expiresAt: 0 }
   }
   return { token, expiresAt }
