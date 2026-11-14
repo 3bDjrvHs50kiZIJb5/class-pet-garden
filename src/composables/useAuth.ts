@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import { clearAdminSession, getAdminSessionHeader } from '@/composables/useAdminSession'
 
 interface User {
   id: string
@@ -22,6 +23,13 @@ api.interceptors.request.use((config) => {
   if (token.value && !config.headers.Authorization) {
     config.headers.Authorization = `Bearer ${token.value}`
   }
+  const url = config.url || ''
+  if (url.includes('/admin') && !url.includes('/admin/unlock')) {
+    const adminSession = getAdminSessionHeader()
+    if (adminSession) {
+      config.headers['X-Admin-Session'] = adminSession
+    }
+  }
   return config
 })
 
@@ -29,7 +37,11 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && !isGuest.value) {
+    const url = error.config?.url || ''
+    if (error.response?.status === 403 && url.includes('/admin') && !url.includes('/admin/unlock')) {
+      clearAdminSession()
+    }
+    if (error.response?.status === 401 && !isGuest.value && !url.includes('/admin/unlock')) {
       // 已登录用户 token 失效，退回游客模式
       logout()
     }
@@ -75,6 +87,7 @@ function setUser(userData: User, userToken: string) {
 
 // 退出登录（回到游客模式）
 function logout() {
+  clearAdminSession()
   const guestUser = { id: 'guest', username: '游客', isGuest: true }
   user.value = guestUser
   token.value = 'guest'

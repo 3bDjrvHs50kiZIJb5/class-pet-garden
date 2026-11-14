@@ -4,16 +4,17 @@ import { useRouter } from 'vue-router'
 import AppShell from '@/components/AppShell.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { useAuth } from '@/composables/useAuth'
+import { clearAdminSession } from '@/composables/useAdminSession'
 import { useToast } from '@/composables/useToast'
 import type { AdminClassOverview, AdminMemberItem, AdminMemberOverview, ClassVipItem } from '@/types'
 
 const router = useRouter()
-const { api, isAdmin } = useAuth()
+const { api } = useAuth()
 const toast = useToast()
 
-type AdminTab = 'classes' | 'members'
+type AdminTab = 'overview' | 'vip' | 'classes' | 'members'
 
-const activeTab = ref<AdminTab>('classes')
+const activeTab = ref<AdminTab>('overview')
 const loading = ref(true)
 const membersLoading = ref(false)
 const saving = ref(false)
@@ -37,9 +38,10 @@ const vipFilter = ref<'all' | 'active' | 'inactive'>('all')
 
 const filteredClasses = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
+  const applyVipFilter = activeTab.value === 'vip'
   return classes.value.filter(item => {
-    const matchesVip =
-      vipFilter.value === 'all'
+    const matchesVip = !applyVipFilter
+      || vipFilter.value === 'all'
       || (vipFilter.value === 'active' ? Boolean(item.vip?.isActive) : !item.vip?.isActive)
 
     if (!matchesVip) return false
@@ -72,6 +74,13 @@ const memberSummary = computed(() => ({
   totalClasses: members.value.reduce((sum, item) => sum + item.classCount, 0),
   totalStudents: members.value.reduce((sum, item) => sum + item.studentCount, 0),
 }))
+
+const expiringVipCount = computed(() => {
+  const horizon = Date.now() + 7 * 24 * 60 * 60 * 1000
+  return classes.value.filter((item) => item.vip?.isActive && item.vip.expiresAt && item.vip.expiresAt <= horizon).length
+})
+
+const demoClass = computed(() => classes.value.find((item) => item.isDemo))
 
 function formatDate(timestamp: number) {
   return new Date(timestamp).toLocaleDateString('zh-CN', {
@@ -146,9 +155,33 @@ async function loadMembers() {
 
 function switchTab(tab: AdminTab) {
   activeTab.value = tab
-  if (tab === 'members') {
+  if (tab === 'members' && !members.value.length) {
     void loadMembers()
   }
+}
+
+function lockConsole() {
+  clearAdminSession()
+  void router.replace('/manage/unlock')
+}
+
+function quickExtendVip(item: ClassVipItem, months: number) {
+  if (item.isDemo) {
+    toast.info('演示班级不支持 VIP 授权')
+    return
+  }
+  const draft = vipDrafts.value[item.id]
+  if (!draft) return
+  let baseMs = Date.now()
+  if (draft.isVip && draft.expiresAt) {
+    const current = fromDatetimeLocalValue(draft.expiresAt)
+    baseMs = Math.max(current, Date.now())
+  }
+  const next = new Date(baseMs)
+  next.setMonth(next.getMonth() + months)
+  draft.isVip = true
+  draft.expiresAt = toDatetimeLocalValue(next.getTime())
+  void saveVipAuthorization(item)
 }
 
 async function loadClasses() {
@@ -311,31 +344,36 @@ async function confirmDeleteMember() {
 }
 
 onMounted(() => {
-  if (!isAdmin.value) {
-    router.replace('/dashboard')
-    return
-  }
-  loadClasses()
+  void loadClasses()
+  void loadMembers()
 })
 </script>
 
 <template>
-  <AppShell active-page="manage" title="系统管理" eyebrow="SYSTEM ADMIN">
+  <AppShell active-page="manage" title="管理员" eyebrow="ADMIN CONSOLE">
     <div class="w-full">
       <section class="overflow-hidden rounded-[2rem] border border-[#f0e5da] bg-white shadow-[0_12px_40px_rgba(101,71,45,0.06)]">
         <div class="p-7 sm:p-10">
-          <p class="text-sm font-bold tracking-[0.2em] text-[#d78248]">SYSTEM ADMIN</p>
+          <p class="text-sm font-bold tracking-[0.2em] text-[#d78248]">ADMIN CONSOLE</p>
           <div class="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 class="font-serif text-4xl font-bold tracking-tight text-[#422d20] sm:text-5xl">系统管理</h1>
-              <p class="mt-4 whitespace-nowrap text-sm text-[#806b5b] sm:text-base">
-                管理全站注册教师账户，以及全部班级与 VIP 授权状态。
+              <h1 class="font-serif text-4xl font-bold tracking-tight text-[#422d20] sm:text-5xl">运营后台</h1>
+              <p class="mt-4 text-sm text-[#806b5b] sm:text-base">
+                灵犀开通、全站班级与注册教师管理。
               </p>
             </div>
+            <button
+              type="button"
+              class="inline-flex h-11 items-center gap-2 self-start rounded-xl border border-[#f0e5da] px-4 text-sm font-semibold text-[#765f50] transition hover:bg-[#fff7f1] sm:self-auto"
+              @click="lockConsole"
+            >
+              <span class="material-symbols-rounded text-[18px] leading-none">lock</span>
+              锁定后台
+            </button>
           </div>
 
-          <div class="mt-7 flex flex-wrap gap-3">
-            <template v-if="activeTab === 'classes'">
+          <div v-if="activeTab !== 'overview'" class="mt-7 flex flex-wrap gap-3">
+            <template v-if="activeTab === 'vip' || activeTab === 'classes'">
               <div class="rounded-2xl bg-[#fff3e7] px-4 py-3">
                 <p class="text-xl font-bold text-[#b76129]">{{ summary.total }}</p>
                 <p class="mt-0.5 text-sm font-medium text-[#9e704f]">全部班级</p>
@@ -370,29 +408,67 @@ onMounted(() => {
       <section class="mt-6 rounded-[1.75rem] border border-[#f0e5da] bg-white p-4 shadow-[0_10px_30px_rgba(101,71,45,0.04)] sm:p-5">
         <div class="flex flex-wrap gap-2 border-b border-[#f3ece4] pb-4">
           <button
+            v-for="tab in [
+              { id: 'overview', label: '概览' },
+              { id: 'vip', label: '灵犀开通' },
+              { id: 'classes', label: '班级管理' },
+              { id: 'members', label: '教师账户' },
+            ]"
+            :key="tab.id"
             type="button"
             class="rounded-full px-4 py-2 text-sm font-semibold transition"
-            :class="activeTab === 'classes' ? 'bg-[#fff0e2] text-[#b85e25] shadow-[inset_0_0_0_1px_rgba(234,151,86,0.18)]' : 'bg-[#fff8f2] text-[#765f50] hover:bg-[#fff7f1] hover:text-[#b85e25]'"
-            @click="switchTab('classes')"
+            :class="activeTab === tab.id ? 'bg-[#fff0e2] text-[#b85e25] shadow-[inset_0_0_0_1px_rgba(234,151,86,0.18)]' : 'bg-[#fff8f2] text-[#765f50] hover:bg-[#fff7f1] hover:text-[#b85e25]'"
+            @click="switchTab(tab.id as AdminTab)"
           >
-            班级管理
-          </button>
-          <button
-            type="button"
-            class="rounded-full px-4 py-2 text-sm font-semibold transition"
-            :class="activeTab === 'members' ? 'bg-[#fff0e2] text-[#b85e25] shadow-[inset_0_0_0_1px_rgba(234,151,86,0.18)]' : 'bg-[#fff8f2] text-[#765f50] hover:bg-[#fff7f1] hover:text-[#b85e25]'"
-            @click="switchTab('members')"
-          >
-            会员管理
+            {{ tab.label }}
           </button>
         </div>
 
-        <div v-if="activeTab === 'classes'">
+        <div v-if="activeTab === 'overview'" class="mt-5 space-y-4">
+          <p class="text-sm text-[#9a735d]">全站运营数据一览；演示班「{{ demoClass?.name || '向日葵班' }}」每日自动重置。</p>
+          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="rounded-2xl bg-[#fff3e7] px-4 py-4">
+              <p class="text-2xl font-bold text-[#b76129]">{{ memberSummary.totalMembers }}</p>
+              <p class="mt-1 text-sm font-medium text-[#9e704f]">注册教师</p>
+            </div>
+            <div class="rounded-2xl bg-[#fff3e7] px-4 py-4">
+              <p class="text-2xl font-bold text-[#b76129]">{{ summary.total }}</p>
+              <p class="mt-1 text-sm font-medium text-[#9e704f]">班级总数</p>
+            </div>
+            <div class="rounded-2xl bg-[#fff7ed] px-4 py-4">
+              <p class="text-2xl font-bold text-[#ea580c]">{{ memberSummary.totalStudents }}</p>
+              <p class="mt-1 text-sm font-medium text-[#b07a4f]">学生总数</p>
+            </div>
+            <div class="rounded-2xl bg-[#ecfdf5] px-4 py-4">
+              <p class="text-2xl font-bold text-[#059669]">{{ summary.vipActive }}</p>
+              <p class="mt-1 text-sm font-medium text-[#6b8f7d]">灵犀生效中</p>
+            </div>
+            <div class="rounded-2xl bg-[#fff7ed] px-4 py-4">
+              <p class="text-2xl font-bold text-[#c2410c]">{{ summary.vipInactive }}</p>
+              <p class="mt-1 text-sm font-medium text-[#b07a4f]">未开通灵犀</p>
+            </div>
+            <div class="rounded-2xl bg-[#fff1f2] px-4 py-4">
+              <p class="text-2xl font-bold text-[#e11d48]">{{ expiringVipCount }}</p>
+              <p class="mt-1 text-sm font-medium text-[#be123c]">7 日内到期</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="text-sm font-semibold text-orange-600 hover:text-orange-700"
+            @click="switchTab('vip')"
+          >
+            前往灵犀开通 →
+          </button>
+        </div>
+
+        <div v-else-if="activeTab === 'vip' || activeTab === 'classes'">
         <div class="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p class="text-sm font-bold tracking-[0.16em] text-[#d78248]">ALL CLASSES</p>
-            <h2 class="mt-1 font-serif text-2xl font-bold text-[#422d20]">全站班级与 VIP 授权</h2>
-            <p class="mt-1 text-sm text-[#9a735d]">可查看所属教师、编辑班级名称、删除班级，并手动设置 VIP 状态与到期时间</p>
+            <p class="text-sm font-bold tracking-[0.16em] text-[#d78248]">{{ activeTab === 'vip' ? 'LINGXI VIP' : 'ALL CLASSES' }}</p>
+            <h2 class="mt-1 font-serif text-2xl font-bold text-[#422d20]">{{ activeTab === 'vip' ? '灵犀计划开通' : '全站班级' }}</h2>
+            <p class="mt-1 text-sm text-[#9a735d]">
+              {{ activeTab === 'vip' ? '手动开通灵犀、设置到期时间与快捷续期' : '编辑班级名称、删除班级（VIP 状态只读）' }}
+            </p>
           </div>
           <label class="flex h-11 w-full items-center gap-2 rounded-xl border border-[#ecdfd4] bg-[#fffdfb] px-3 text-[#a1836d] focus-within:border-orange-300 lg:w-72">
             <span class="material-symbols-rounded text-[18px] leading-none">search</span>
@@ -406,7 +482,7 @@ onMounted(() => {
           </label>
         </div>
 
-        <div class="mt-4 flex flex-wrap items-center gap-2">
+        <div v-if="activeTab === 'vip'" class="mt-4 flex flex-wrap items-center gap-2">
           <span class="text-sm font-semibold text-[#9a735d]">VIP 筛选</span>
           <button
             v-for="option in [
@@ -465,7 +541,7 @@ onMounted(() => {
                 <p v-if="item.vip?.expiresAt" class="mt-2 text-sm text-[#8b6d57]">
                   当前到期：{{ formatDate(item.vip.expiresAt) }}
                 </p>
-                <div class="mt-3 flex flex-wrap gap-2">
+                <div v-if="activeTab === 'classes'" class="mt-3 flex flex-wrap gap-2">
                   <button
                     type="button"
                     class="inline-flex h-9 items-center gap-1 rounded-xl border border-[#f0e5da] px-3 text-sm font-semibold text-[#765f50] transition hover:bg-[#fff7f1]"
@@ -486,7 +562,7 @@ onMounted(() => {
                 </div>
               </div>
 
-              <div class="w-full rounded-2xl border border-[#f3ece4] bg-[#fff8f2] p-4 lg:max-w-md">
+              <div v-if="activeTab === 'vip'" class="w-full rounded-2xl border border-[#f3ece4] bg-[#fff8f2] p-4 lg:max-w-md">
                 <p class="text-sm font-bold text-[#4d3527]">VIP 授权</p>
                 <label class="mt-3 flex items-center gap-3">
                   <input
@@ -512,6 +588,25 @@ onMounted(() => {
 
                 <p v-if="item.isDemo" class="mt-3 text-sm text-[#6b7280]">演示班级不支持 VIP 授权</p>
 
+                <div v-if="!item.isDemo && vipDrafts[item.id]?.isVip" class="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    class="rounded-lg border border-[#fed7aa] bg-white px-3 py-1.5 text-xs font-semibold text-[#c2410c] hover:bg-[#fff7ed]"
+                    :disabled="saving"
+                    @click="quickExtendVip(item, 1)"
+                  >
+                    续期 +1 月
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-lg border border-[#fed7aa] bg-white px-3 py-1.5 text-xs font-semibold text-[#c2410c] hover:bg-[#fff7ed]"
+                    :disabled="saving"
+                    @click="quickExtendVip(item, 6)"
+                  >
+                    续期 +6 月
+                  </button>
+                </div>
+
                 <button
                   type="button"
                   class="mt-4 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-[#ea580c] px-4 text-sm font-semibold text-white transition hover:bg-[#c2410c] disabled:cursor-not-allowed disabled:opacity-50"
@@ -527,7 +622,7 @@ onMounted(() => {
         </div>
         </div>
 
-        <div v-else>
+        <div v-else-if="activeTab === 'members'">
           <div class="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p class="text-sm font-bold tracking-[0.16em] text-[#d78248]">ALL MEMBERS</p>

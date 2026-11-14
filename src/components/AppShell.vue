@@ -7,7 +7,7 @@ import { CURRENT_CLASS_CHANGED_EVENT, useClassVip } from '@/composables/useClass
 import { useStudentImport, STUDENTS_IMPORTED_EVENT } from '@/composables/useStudentImport'
 
 const route = useRoute()
-const { isAdmin } = useAuth()
+useAuth()
 const { currentClassVipActive, refreshClassVipStatus } = useClassVip()
 
 withDefaults(defineProps<{
@@ -113,7 +113,7 @@ watch(() => route.path, () => {
           </router-link>
           <router-link to="/ranking" class="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-sm font-semibold transition" :class="activePage === 'ranking' ? 'bg-[#fff0e2] text-[#b85e25] shadow-[inset_0_0_0_1px_rgba(234,151,86,0.18)]' : 'text-[#765f50] hover:bg-[#fff7f1] hover:text-[#b85e25]'"><span class="material-symbols-rounded text-[20px] leading-none">emoji_events</span>班级排行榜</router-link>
           <router-link v-if="!currentClassVipActive" to="/vip" class="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-sm font-semibold transition" :class="activePage === 'vip' ? 'bg-[#fff0e2] text-[#b85e25] shadow-[inset_0_0_0_1px_rgba(234,151,86,0.18)]' : 'text-[#765f50] hover:bg-[#fff7f1] hover:text-[#b85e25]'"><span class="material-symbols-rounded text-[20px] leading-none">workspace_premium</span>灵犀计划</router-link>
-          <router-link v-if="isAdmin" to="/manage" class="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-sm font-semibold transition" :class="activePage === 'manage' ? 'bg-[#fff0e2] text-[#b85e25] shadow-[inset_0_0_0_1px_rgba(234,151,86,0.18)]' : 'text-[#765f50] hover:bg-[#fff7f1] hover:text-[#b85e25]'"><span class="material-symbols-rounded text-[20px] leading-none">manage_accounts</span>系统管理</router-link>
+          <router-link to="/manage" class="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-sm font-semibold transition" :class="activePage === 'manage' ? 'bg-[#fff0e2] text-[#b85e25] shadow-[inset_0_0_0_1px_rgba(234,151,86,0.18)]' : 'text-[#765f50] hover:bg-[#fff7f1] hover:text-[#b85e25]'"><span class="material-symbols-rounded text-[20px] leading-none">admin_panel_settings</span>管理员<span class="material-symbols-rounded text-[16px] text-[#c4a484]">lock</span></router-link>
         </nav>
 
         <router-link
@@ -216,10 +216,11 @@ watch(() => route.path, () => {
       @cancel="cancelImportConfirm"
     />
 
-    <nav class="fixed inset-x-3 bottom-3 z-40 grid grid-cols-6 rounded-2xl border border-[#f1e5db] bg-white/95 p-1.5 shadow-[0_12px_36px_rgba(116,76,45,0.16)] backdrop-blur transition-all duration-300 lg:hidden" :class="navigationDimmed ? 'opacity-40 grayscale pointer-events-none select-none' : ''" aria-label="移动导航">
-      <router-link v-for="item in navigation.slice(0, 4)" :key="item.id" :to="item.to" class="flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl text-sm font-semibold leading-tight" :class="activePage === item.id ? 'bg-[#fff0e2] text-[#b85e25]' : 'text-[#8c7464]'"><span class="material-symbols-rounded text-[18px] leading-none">{{ item.icon }}</span>{{ item.label === '喂养记录' ? '记录' : item.label === '评价规则' ? '规则' : item.label === '宠物图鉴' ? '图鉴' : '工作台' }}</router-link>
-      <router-link to="/tasks" class="flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl text-sm font-semibold leading-tight" :class="activePage === 'tasks' ? 'bg-[#fff0e2] text-[#b85e25]' : 'text-[#8c7464]'"><span class="material-symbols-rounded text-[18px] leading-none">assignment</span>任务</router-link>
+    <nav class="fixed inset-x-3 bottom-3 z-40 grid grid-cols-7 gap-0.5 rounded-2xl border border-[#f1e5db] bg-white/95 p-1.5 shadow-[0_12px_36px_rgba(116,76,45,0.16)] backdrop-blur transition-all duration-300 lg:hidden" :class="navigationDimmed ? 'opacity-40 grayscale pointer-events-none select-none' : ''" aria-label="移动导航">
+      <router-link v-for="item in navigation.slice(0, 4)" :key="item.id" :to="item.to" class="flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-semibold leading-tight" :class="activePage === item.id ? 'bg-[#fff0e2] text-[#b85e25]' : 'text-[#8c7464]'"><span class="material-symbols-rounded text-[18px] leading-none">{{ item.icon }}</span>{{ item.label === '喂养记录' ? '记录' : item.label === '评价规则' ? '规则' : item.label === '宠物图鉴' ? '图鉴' : '工作台' }}</router-link>
+      <router-link to="/tasks" class="flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-semibold leading-tight" :class="activePage === 'tasks' ? 'bg-[#fff0e2] text-[#b85e25]' : 'text-[#8c7464]'"><span class="material-symbols-rounded text-[18px] leading-none">assignment</span>任务</router-link>
       <router-link to="/ranking" class="flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl text-sm font-semibold leading-tight" :class="activePage === 'ranking' ? 'bg-[#fff0e2] text-[#b85e25]' : 'text-[#8c7464]'"><span class="material-symbols-rounded text-[18px] leading-none">emoji_events</span>排行</router-link>
+      <router-link to="/manage" class="flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl text-sm font-semibold leading-tight" :class="activePage === 'manage' ? 'bg-[#fff0e2] text-[#b85e25]' : 'text-[#8c7464]'"><span class="material-symbols-rounded text-[18px] leading-none">admin_panel_settings</span>管理</router-link>
     </nav>
   </div>
 </template>

@@ -2,7 +2,7 @@ import crypto from 'crypto'
 
 const DEV_TOKEN_SECRET = 'pet-garden-dev-token-secret'
 
-function getTokenSecret() {
+export function getTokenSecret() {
   if (process.env.TOKEN_SECRET) {
     return process.env.TOKEN_SECRET
   }

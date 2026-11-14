@@ -23,6 +23,8 @@ npm run server       # 仅后端（含 DB 初始化）
 npm run ensure-deps  # 仅检查并安装 npm 依赖
 # 等价：bash scripts/start-dev.sh
 
+# 运营后台：侧栏「管理员」人人可见；解锁口令见 ADMIN_CONSOLE_PASSWORD（开发默认可与 ADMIN_DEFAULT_PASSWORD 一致）
+
 # 生产
 npm run build        # 类型检查 + 构建前端（vue-tsc && vite build）
 npm run preview      # 预览生产构建
