@@ -38,4 +38,10 @@ export const loginRateLimit = createAuthRateLimiter({
   message: '登录尝试过于频繁，请稍后再试',
 })
 
+export const adminUnlockRateLimit = createAuthRateLimiter({
+  windowMs: Number(process.env.ADMIN_UNLOCK_RATE_LIMIT_WINDOW_MS || MINUTE_MS),
+  max: Number(process.env.ADMIN_UNLOCK_RATE_LIMIT_MAX || 5),
+  message: '管理员密码尝试过于频繁，请稍后再试',
+})
+
 export { isRateLimitDisabled }

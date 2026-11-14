@@ -1,14 +1,44 @@
 import { Router } from 'express'
 import { v4 as uuidv4 } from 'uuid'
 import { db } from '../db.js'
-import { ADMIN_USERNAME, adminMiddleware } from '../middleware/admin.js'
+import { ADMIN_USERNAME, adminConsoleMiddleware } from '../middleware/admin.js'
+import { adminUnlockRateLimit } from '../middleware/rateLimit.js'
+import { resolveAuthPayload } from '../middleware/auth.js'
+import {
+  generateAdminSessionToken,
+  verifyAdminUnlockPassword,
+} from '../utils/adminConsole.js'
 import { hashPassword } from '../utils/password.js'
 import { deleteClassData, deleteUserData, DEMO_CLASS_ID } from '../utils/adminCleanup.js'
 import { normalizeVipRow } from './vip.js'
 
 const router = Router()
 
-router.use(adminMiddleware)
+router.post('/unlock', adminUnlockRateLimit, async (req, res) => {
+  const { password } = req.body || {}
+  const trimmed = String(password || '')
+  if (!trimmed) {
+    return res.status(400).json({ error: '请输入管理员密码' })
+  }
+
+  const bearer = req.headers.authorization?.replace('Bearer ', '') || ''
+  const payload = await resolveAuthPayload(bearer)
+  const userId = payload?.userId
+
+  const ok = await verifyAdminUnlockPassword(trimmed, userId)
+  if (!ok) {
+    return res.status(401).json({ error: '密码错误' })
+  }
+
+  const adminSessionToken = generateAdminSessionToken()
+  const expiresInMs = Number(process.env.ADMIN_CONSOLE_SESSION_MS || 30 * 60 * 1000)
+  res.json({
+    adminSessionToken,
+    expiresAt: Date.now() + expiresInMs,
+  })
+})
+
+router.use(adminConsoleMiddleware)
 
 async function getClassById(classId) {
   return await db.prepare(`
