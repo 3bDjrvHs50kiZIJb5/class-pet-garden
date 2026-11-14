@@ -29,10 +29,10 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
-    // 静态资源缓存配置
+    // 开发服务器不能长期缓存：否则白屏修复后浏览器仍会用旧的崩溃脚本
     headers: {
-      'Cache-Control': 'public, max-age=31536000, immutable'
-    }
+      'Cache-Control': 'no-store',
+    },
   },
   // 构建配置 - 静态资源添加 hash
   build: {

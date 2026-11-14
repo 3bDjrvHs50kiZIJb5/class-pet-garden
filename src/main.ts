@@ -6,6 +6,14 @@ import './fonts-critical.css'
 import './style.css'
 
 const app = createApp(App)
+app.config.errorHandler = (err) => {
+  console.error(err)
+  const root = document.getElementById('app')
+  if (root && root.childElementCount === 0) {
+    const message = err instanceof Error ? err.message : String(err)
+    root.textContent = `页面启动失败：${message}`
+  }
+}
 app.use(createPinia())
 app.use(router)
 app.mount('#app')
