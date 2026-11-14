@@ -7,16 +7,43 @@ const PUSH_URL =
 function formatRegisterTime(date = new Date()) {
   return date.toLocaleString('zh-CN', {
     timeZone: 'Asia/Shanghai',
-    hour12: false
+    hour12: false,
   })
+}
+
+function truncate(text, max = 120) {
+  if (text == null || text === '') return '—'
+  const s = String(text).trim()
+  if (!s) return '—'
+  return s.length <= max ? s : `${s.slice(0, max)}…`
+}
+
+/**
+ * @param {string} username
+ * @param {Date | number} [registeredAt]
+ * @param {{ clientIp?: string, hostname?: string, userAgent?: string }} [meta]
+ */
+export function buildTeacherRegisterNoticeContent(username, registeredAt = new Date(), meta = {}) {
+  const lines = [
+    `手机号：${username}`,
+    `注册时间：${formatRegisterTime(registeredAt)}`,
+    `客户端 IP：${meta.clientIp?.trim() || '未知'}`,
+    `来源域名：${meta.hostname?.trim() || '未知'}`,
+    `User-Agent：${truncate(meta.userAgent, 160)}`,
+  ]
+  return lines.join('\n')
 }
 
 /**
  * 教师注册成功后通知管理员。
+ * @param {{ clientIp?: string, hostname?: string, userAgent?: string }} [meta]
  */
-export async function sendTeacherRegisterNotice(username, registeredAt = new Date()) {
-  const title = '班级宠物园，教师注册成功'
-  const content = `手机号：${username}\n注册时间：${formatRegisterTime(registeredAt)}`
+export async function sendTeacherRegisterNotice(username, registeredAt = new Date(), meta = {}) {
+  const ip = meta.clientIp?.trim()
+  const title = ip
+    ? `班级宠物园·新教师 ${username}（${ip}）`
+    : `班级宠物园·新教师 ${username}`
+  const content = buildTeacherRegisterNoticeContent(username, registeredAt, meta)
   return sendAsync(title, content)
 }
 

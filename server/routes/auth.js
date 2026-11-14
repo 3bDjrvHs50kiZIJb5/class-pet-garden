@@ -21,6 +21,20 @@ function getClientIp(req) {
   return req.ip || ''
 }
 
+function getRequestHostname(req) {
+  const forwarded = req.headers['x-forwarded-host']
+  if (typeof forwarded === 'string' && forwarded.length > 0) {
+    return forwarded.split(',')[0].trim()
+  }
+  const host = req.headers.host
+  return typeof host === 'string' ? host : ''
+}
+
+function getRequestUserAgent(req) {
+  const ua = req.headers['user-agent']
+  return typeof ua === 'string' ? ua : ''
+}
+
 // 注册
 router.post('/register', registerRateLimit, async (req, res) => {
   const { username, password, turnstileToken } = req.body || {}
@@ -59,7 +73,11 @@ router.post('/register', registerRateLimit, async (req, res) => {
 
   await markWelcomeVipEligible(db, userId)
 
-  void sendTeacherRegisterNotice(username, new Date(createdAt))
+  void sendTeacherRegisterNotice(username, new Date(createdAt), {
+    clientIp: getClientIp(req),
+    hostname: getRequestHostname(req),
+    userAgent: getRequestUserAgent(req),
+  })
 
   const token = generateToken(userId)
   res.json({

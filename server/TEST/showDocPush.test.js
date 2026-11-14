@@ -30,7 +30,11 @@ describe('ShowDoc 注册推送', () => {
     })
 
     const registeredAt = new Date('2026-07-10T07:17:00.000Z')
-    await sendTeacherRegisterNotice('13800138000', registeredAt)
+    await sendTeacherRegisterNotice('13800138000', registeredAt, {
+      clientIp: '203.0.113.8',
+      hostname: 'pets.renzhe.org',
+      userAgent: 'Mozilla/5.0 Test',
+    })
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
     const [url, options] = fetchMock.mock.calls[0]
@@ -38,11 +42,14 @@ describe('ShowDoc 注册推送', () => {
     expect(options.method).toBe('POST')
     expect(options.headers['Content-Type']).toBe('application/x-www-form-urlencoded')
 
-    const body = options.body.toString()
-    expect(body).toContain('title=' + encodeURIComponent('班级宠物园，教师注册成功'))
-    expect(body).toContain('content=')
-    expect(decodeURIComponent(body)).toContain('手机号：13800138000')
-    expect(decodeURIComponent(body)).toContain('注册时间：')
+    const params = new URLSearchParams(options.body.toString())
+    expect(params.get('title')).toBe('班级宠物园·新教师 13800138000（203.0.113.8）')
+    const content = params.get('content') || ''
+    expect(content).toContain('手机号：13800138000')
+    expect(content).toContain('注册时间：')
+    expect(content).toContain('客户端 IP：203.0.113.8')
+    expect(content).toContain('来源域名：pets.renzhe.org')
+    expect(content).toContain('User-Agent：Mozilla/5.0 Test')
   })
 
   it('推送失败时不应抛出异常', async () => {
