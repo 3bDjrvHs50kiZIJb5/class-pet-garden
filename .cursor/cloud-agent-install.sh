@@ -16,10 +16,6 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   mariadb-server \
   mariadb-client
 
-echo ">>> 安装前端依赖..."
-npm ci
-
-echo ">>> 安装后端依赖..."
-npm ci --prefix server
+bash scripts/ensure-npm-deps.sh --force
 
 echo ">>> Cloud Agent install 完成"

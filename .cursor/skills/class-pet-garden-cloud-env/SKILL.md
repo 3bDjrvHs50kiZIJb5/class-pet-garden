@@ -21,7 +21,7 @@ description: >-
 |----|-----|
 | 前端 | Vue Vite **3001** |
 | API | Express **3002** |
-| 一键 dev | 根目录 `npm start`（concurrently） |
+| 一键 dev | 根目录 `npm start`（concurrently）；缺依赖时 `scripts/ensure-npm-deps.sh` 自动 `npm ci` |
 | DB（Cloud） | MariaDB，`classpets` / 用户 `classpets` |
 | 健康检查 | `GET http://127.0.0.1:3002/api/health` |
 | tmux 会话 | `class_pet_garden` |

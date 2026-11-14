@@ -16,10 +16,11 @@
 ## 构建/开发/测试命令
 
 ```bash
-# 开发
+# 开发（首次或 node_modules 缺失时会经 predev/preserver 自动执行 npm ci）
 npm run dev          # 启动前端开发服务器（端口 3001）
 npm run server       # 启动后端 API 服务器（端口 3002）
 npm run start        # 同时启动前后端
+npm run ensure-deps  # 手动检查并安装根目录 + server 依赖
 
 # 生产
 npm run build        # 类型检查 + 构建前端（vue-tsc && vite build）

@@ -50,6 +50,7 @@ start_app() {
     echo "开发服务已在 tmux 会话 $SESSION 中运行"
     return
   fi
+  bash "$ROOT/scripts/ensure-npm-deps.sh"
   echo ">>> 启动 npm start（前端 3001 + 后端 3002）..."
   tmux new-session -d -s "$SESSION" -c "$ROOT" \
     "DB_HOST='$DB_HOST' DB_PORT='$DB_PORT' DB_USER='$DB_USER' DB_PASSWORD='$DB_PASSWORD' DB_NAME='$DB_NAME' TOKEN_SECRET='$TOKEN_SECRET' npm start 2>&1 | tee $LOG_DIR/dev.log"
