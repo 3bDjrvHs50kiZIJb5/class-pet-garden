@@ -15,7 +15,9 @@ if ! command -v npx >/dev/null 2>&1; then
   exit 1
 fi
 
-echo ">>> 启动前后端（前端 3001，API 3002）..."
+export API_HOST="${API_HOST:-127.0.0.1}"
+export API_PORT="${API_PORT:-3002}"
+echo ">>> 启动前后端（前端 3001，API ${API_PORT}；代理 → ${API_HOST}:${API_PORT}）..."
 exec npx concurrently -k \
   -n vite,api \
   -c cyan,green \

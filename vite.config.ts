@@ -2,7 +2,9 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 
+const apiHost = process.env.API_HOST || '127.0.0.1'
 const apiPort = Number(process.env.API_PORT || 3002)
+const apiTarget = `http://${apiHost}:${apiPort}`
 
 export default defineConfig({
   plugins: [vue()],
@@ -17,10 +19,15 @@ export default defineConfig({
     host: true,
     proxy: {
       '/pet-garden/api': {
-        target: `http://localhost:${apiPort}`,
+        target: apiTarget,
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/pet-garden/, '')
-      }
+        rewrite: (path) => path.replace(/^\/pet-garden/, ''),
+      },
+      // 兼容少数直接请求 /api 的场景（开发环境）
+      '/api': {
+        target: apiTarget,
+        changeOrigin: true,
+      },
     },
     // 静态资源缓存配置
     headers: {

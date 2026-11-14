@@ -4,7 +4,7 @@
   "description": "班级积分管理 + 电子宠物养成系统",
   "scripts": {
     "ensure-deps": "bash scripts/ensure-npm-deps.sh",
-    "predev": "npm run ensure-deps",
+    "predev": "npm run ensure-deps && bash scripts/check-api-backend.sh",
     "dev": "vite",
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
