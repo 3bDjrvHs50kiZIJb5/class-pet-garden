@@ -2,11 +2,141 @@ import { Router } from 'express'
 import { v4 as uuidv4 } from 'uuid'
 import { db } from '../db.js'
 import { ADMIN_USERNAME, adminMiddleware } from '../middleware/admin.js'
-import { hashPassword } from '../utils/password.js'
+import { hashPassword, verifyPassword } from '../utils/password.js'
 import { deleteClassData, deleteUserData, DEMO_CLASS_ID } from '../utils/adminCleanup.js'
 import { normalizeVipRow } from './vip.js'
+import { generateAdminPanelToken, PANEL_TTL_MS } from '../utils/adminPanelToken.js'
+import { loginRateLimit } from '../middleware/rateLimit.js'
+import { resetDemoData } from '../demo-seed.js'
+import { DEFAULT_TIMEZONE, getMillisecondsUntilNextMidnight } from '../utils/demoResetScheduler.js'
+
+const ONE_DAY_MS = 24 * 60 * 60 * 1000
+
+function getDemoResetTimezone() {
+  return process.env.DEMO_RESET_TIMEZONE || DEFAULT_TIMEZONE
+}
+
+function getStartOfTodayMs(timeZone, now = Date.now()) {
+  return now - (ONE_DAY_MS - getMillisecondsUntilNextMidnight(timeZone, now))
+}
+
+async function countTeacherRegistrationsSince(sinceMs) {
+  const row = await db.prepare(`
+    SELECT COUNT(*) AS count
+    FROM users
+    WHERE is_guest = 0 AND LOWER(username) != LOWER(?)
+      AND created_at >= ?
+  `).get(ADMIN_USERNAME, sinceMs)
+  return row?.count || 0
+}
+
+async function buildOperationsOverview() {
+  const now = Date.now()
+  const timeZone = getDemoResetTimezone()
+  const startOfToday = getStartOfTodayMs(timeZone, now)
+  const startOf7Days = startOfToday - 6 * ONE_DAY_MS
+
+  const [
+    registrationsToday,
+    registrations7Days,
+    totalClassesRow,
+    activeClassesRow,
+    evaluationRow,
+    vipActiveRow,
+    vipExpiringSoon,
+  ] = await Promise.all([
+    countTeacherRegistrationsSince(startOfToday),
+    countTeacherRegistrationsSince(startOf7Days),
+    db.prepare('SELECT COUNT(*) AS total_classes FROM classes').get(),
+    db.prepare(`
+      SELECT COUNT(DISTINCT s.class_id) AS active_classes
+      FROM students s
+      JOIN classes c ON c.id = s.class_id
+      WHERE c.id != ?
+    `).get(DEMO_CLASS_ID),
+    db.prepare('SELECT COUNT(*) AS count FROM evaluation_records').get(),
+    db.prepare(`
+      SELECT COUNT(*) AS count
+      FROM class_vip_subscriptions
+      WHERE status = 'active' AND expires_at > ?
+        AND class_id != ?
+    `).get(now, DEMO_CLASS_ID),
+    db.prepare(`
+      SELECT c.id, c.name, v.expires_at AS expires_at, v.plan
+      FROM class_vip_subscriptions v
+      JOIN classes c ON c.id = v.class_id
+      WHERE v.class_id != ?
+        AND v.status = 'active'
+        AND v.expires_at > ?
+        AND v.expires_at <= ?
+      ORDER BY v.expires_at ASC
+      LIMIT 20
+    `).all(DEMO_CLASS_ID, now, now + 7 * ONE_DAY_MS),
+  ])
+
+  return {
+    generatedAt: now,
+    timeZone,
+    registrationsToday,
+    registrations7Days,
+    totalClasses: totalClassesRow?.total_classes || 0,
+    activeClasses: activeClassesRow?.active_classes || 0,
+    totalEvaluations: evaluationRow?.count || 0,
+    vipActiveCount: vipActiveRow?.count || 0,
+    vipExpiringSoon: vipExpiringSoon.map(row => ({
+      classId: row.id,
+      className: row.name,
+      plan: row.plan,
+      expiresAt: row.expires_at,
+    })),
+  }
+}
+
+async function getGuestUserId() {
+  const guest = await db.prepare('SELECT id FROM users WHERE username = ?').get('guest')
+  return guest?.id ?? null
+}
+
+async function buildDemoPanelInfo() {
+  const timeZone = getDemoResetTimezone()
+  const now = Date.now()
+  const msUntilReset = getMillisecondsUntilNextMidnight(timeZone, now)
+  const nextResetAt = now + msUntilReset
+  const studentCountRow = await db.prepare('SELECT COUNT(*) AS count FROM students WHERE class_id = ?').get(DEMO_CLASS_ID)
+  const classRow = await db.prepare('SELECT id, name FROM classes WHERE id = ?').get(DEMO_CLASS_ID)
+
+  return {
+    timeZone,
+    nextResetAt,
+    msUntilReset,
+    classId: DEMO_CLASS_ID,
+    className: classRow?.name || '演示班级',
+    exists: !!classRow,
+    studentCount: studentCountRow?.count || 0,
+    schedule: '每日 0 点（北京时间）自动重置',
+  }
+}
 
 const router = Router()
+
+router.post('/unlock', loginRateLimit, async (req, res) => {
+  const password = String(req.body?.password || '')
+  if (!password) {
+    return res.status(401).json({ error: '密码错误' })
+  }
+
+  const adminUser = await db.prepare('SELECT password_hash FROM users WHERE username = ? AND is_guest = 0').get(ADMIN_USERNAME)
+  if (!adminUser || !verifyPassword(password, adminUser.password_hash)) {
+    return res.status(401).json({ error: '密码错误' })
+  }
+
+  const adminPanelToken = generateAdminPanelToken()
+  res.json({
+    success: true,
+    adminPanelToken,
+    expiresInMs: PANEL_TTL_MS,
+  })
+})
 
 router.use(adminMiddleware)
 
@@ -239,6 +369,36 @@ router.delete('/users/:id', async (req, res) => {
 
   await deleteUserData(db, user.id)
   res.json({ success: true })
+})
+
+router.get('/overview', async (req, res) => {
+  const overview = await buildOperationsOverview()
+  res.json(overview)
+})
+
+router.get('/demo', async (req, res) => {
+  const demo = await buildDemoPanelInfo()
+  res.json(demo)
+})
+
+router.post('/demo/reset', async (req, res) => {
+  const guestUserId = await getGuestUserId()
+  if (!guestUserId) {
+    return res.status(500).json({ error: '未找到游客账户，无法重置演示班' })
+  }
+  try {
+    const result = await resetDemoData(db, guestUserId)
+    const demo = await buildDemoPanelInfo()
+    res.json({
+      success: true,
+      message: `演示班已重置：${result.className || demo.className}（${result.students ?? demo.studentCount} 名学生）`,
+      demo,
+      result,
+    })
+  } catch (error) {
+    console.error('手动重置演示班失败:', error)
+    res.status(500).json({ error: '演示班重置失败，请稍后重试' })
+  }
 })
 
 export default router

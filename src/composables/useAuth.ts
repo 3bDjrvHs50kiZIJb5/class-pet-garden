@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import { getAdminPanelToken } from '@/utils/adminPanelStorage'
 
 interface User {
   id: string
@@ -18,6 +19,13 @@ const api = axios.create({
 
 // 请求拦截器：自动添加 Authorization header
 api.interceptors.request.use((config) => {
+  const url = config.url || ''
+  if (url.startsWith('/admin') && url !== '/admin/unlock') {
+    const panelToken = getAdminPanelToken()
+    if (panelToken) {
+      config.headers['X-Admin-Access'] = `Bearer ${panelToken}`
+    }
+  }
   // 演示模式会显式使用游客账户读取独立数据，不能被当前老师令牌覆盖。
   if (token.value && !config.headers.Authorization) {
     config.headers.Authorization = `Bearer ${token.value}`

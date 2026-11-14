@@ -1,6 +1,6 @@
 import { resetDemoData } from '../demo-seed.js'
 
-const DEFAULT_TIMEZONE = 'Asia/Shanghai'
+export const DEFAULT_TIMEZONE = 'Asia/Shanghai'
 const ONE_DAY_MS = 24 * 60 * 60 * 1000
 
 export function getMillisecondsUntilNextMidnight(timeZone = DEFAULT_TIMEZONE, now = Date.now()) {

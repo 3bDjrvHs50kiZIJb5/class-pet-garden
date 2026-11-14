@@ -1,19 +1,48 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import AppShell from '@/components/AppShell.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { useAdminPanel } from '@/composables/useAdminPanel'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
-import type { AdminClassOverview, AdminMemberItem, AdminMemberOverview, ClassVipItem } from '@/types'
+import type {
+  AdminClassOverview,
+  AdminDemoPanelInfo,
+  AdminMemberItem,
+  AdminMemberOverview,
+  AdminOperationsOverview,
+  ClassVipItem,
+} from '@/types'
 
-const router = useRouter()
-const { api, isAdmin } = useAuth()
+const { api } = useAuth()
+const { isUnlocked, unlock, lock, syncUnlockedFromStorage } = useAdminPanel()
 const toast = useToast()
 
-type AdminTab = 'classes' | 'members'
+const isDev = import.meta.env.DEV
+/** 与本地 server 默认 ADMIN_DEFAULT_PASSWORD 一致，仅开发环境展示/预填 */
+const devAdminPasswordHint = 'admin!@#$'
 
-const activeTab = ref<AdminTab>('classes')
+const gatePassword = ref(isDev ? devAdminPasswordHint : '')
+const gateLoading = ref(false)
+const gateError = ref('')
+
+function resetGatePasswordForDev() {
+  if (isDev) {
+    gatePassword.value = devAdminPasswordHint
+  } else {
+    gatePassword.value = ''
+  }
+}
+
+type AdminTab = 'overview' | 'classes' | 'members' | 'demo'
+
+const activeTab = ref<AdminTab>('overview')
+const overviewLoading = ref(false)
+const demoLoading = ref(false)
+const demoResetting = ref(false)
+const showDemoResetConfirm = ref(false)
+const overview = ref<AdminOperationsOverview | null>(null)
+const demoInfo = ref<AdminDemoPanelInfo | null>(null)
 const loading = ref(true)
 const membersLoading = ref(false)
 const saving = ref(false)
@@ -144,10 +173,83 @@ async function loadMembers() {
   }
 }
 
+async function loadOverview() {
+  overviewLoading.value = true
+  try {
+    const res = await api.get<AdminOperationsOverview>('/admin/overview')
+    overview.value = res.data
+  } catch (error) {
+    console.error('加载运营概览失败:', error)
+    toast.error('加载运营概览失败')
+  } finally {
+    overviewLoading.value = false
+  }
+}
+
+async function loadDemoInfo() {
+  demoLoading.value = true
+  try {
+    const res = await api.get<AdminDemoPanelInfo>('/admin/demo')
+    demoInfo.value = res.data
+  } catch (error) {
+    console.error('加载演示班信息失败:', error)
+    toast.error('加载演示班信息失败')
+  } finally {
+    demoLoading.value = false
+  }
+}
+
+async function confirmDemoReset() {
+  demoResetting.value = true
+  try {
+    const res = await api.post<{ message?: string; demo?: AdminDemoPanelInfo }>('/admin/demo/reset')
+    demoInfo.value = res.data.demo || demoInfo.value
+    toast.success(res.data.message || '演示班已重置')
+    showDemoResetConfirm.value = false
+    if (activeTab.value === 'overview') {
+      void loadOverview()
+    }
+  } catch (error: unknown) {
+    console.error('重置演示班失败:', error)
+    const message = (error as { response?: { data?: { error?: string } } })?.response?.data?.error
+    toast.error(message || '重置演示班失败')
+  } finally {
+    demoResetting.value = false
+  }
+}
+
+function formatDateTime(timestamp: number) {
+  return new Date(timestamp).toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function formatVipPlan(plan: string) {
+  const labels: Record<string, string> = {
+    month: '月度',
+    semester: '学期',
+    year: '年度',
+    manual: '手动授权',
+    welcome: '新用户礼遇',
+    demo: '演示',
+  }
+  return labels[plan] || plan
+}
+
 function switchTab(tab: AdminTab) {
   activeTab.value = tab
-  if (tab === 'members') {
+  if (tab === 'overview') {
+    void loadOverview()
+  } else if (tab === 'members') {
     void loadMembers()
+  } else if (tab === 'demo') {
+    void loadDemoInfo()
+  } else if (tab === 'classes' && !classes.value.length) {
+    void loadClasses()
   }
 }
 
@@ -310,32 +412,122 @@ async function confirmDeleteMember() {
   }
 }
 
-onMounted(() => {
-  if (!isAdmin.value) {
-    router.replace('/dashboard')
+async function handleAdminUnlock() {
+  gateError.value = ''
+  if (!gatePassword.value) {
+    gateError.value = '请输入管理密码'
     return
   }
-  loadClasses()
+  gateLoading.value = true
+  try {
+    await unlock(gatePassword.value)
+    resetGatePasswordForDev()
+    activeTab.value = 'overview'
+    await loadOverview()
+  } catch (error: unknown) {
+    const message = (error as { response?: { data?: { error?: string } } })?.response?.data?.error
+    gateError.value = message || '密码错误'
+  } finally {
+    gateLoading.value = false
+  }
+}
+
+function handleExitAdmin() {
+  lock()
+  gateError.value = ''
+  resetGatePasswordForDev()
+  classes.value = []
+  members.value = []
+}
+
+onMounted(() => {
+  syncUnlockedFromStorage()
+  if (isUnlocked.value) {
+    void loadOverview()
+  }
 })
 </script>
 
 <template>
-  <AppShell active-page="manage" title="系统管理" eyebrow="SYSTEM ADMIN">
-    <div class="w-full">
+  <AppShell active-page="manage" title="管理员" eyebrow="ADMIN">
+  <section
+      v-if="!isUnlocked"
+      class="overflow-hidden rounded-[2rem] border border-[#f0e5da] bg-white shadow-[0_12px_40px_rgba(101,71,45,0.06)]"
+    >
+      <div class="p-7 sm:p-10">
+        <p class="text-sm font-bold tracking-[0.2em] text-[#d78248]">ADMIN</p>
+        <h1 class="mt-3 font-serif text-4xl font-bold tracking-tight text-[#422d20] sm:text-5xl">管理员</h1>
+        <p class="mt-4 max-w-lg text-sm leading-6 text-[#806b5b] sm:text-base">
+          输入运维密码后可管理全站班级与教师账户。不会切换当前登录身份，教师或游客可照常使用班级功能。
+        </p>
+        <p
+          v-if="isDev"
+          class="mt-6 max-w-md rounded-xl border border-dashed border-[#f0c08a] bg-[#fff8f2] px-4 py-3 font-mono text-sm text-[#9a5a2b]"
+        >
+          调试默认密码：{{ devAdminPasswordHint }}
+        </p>
+        <form class="mt-8 max-w-md" @submit.prevent="handleAdminUnlock">
+          <label class="block text-sm font-semibold text-[#9a735d]">管理密码</label>
+          <input
+            v-model="gatePassword"
+            type="password"
+            autocomplete="current-password"
+            class="mt-2 w-full rounded-xl border border-[#ecdfd4] px-4 py-3 text-sm text-[#422d20] outline-none focus:border-orange-400"
+            placeholder="请输入密码"
+          />
+          <p v-if="gateError" class="mt-2 text-sm text-red-600" role="alert">{{ gateError }}</p>
+          <button
+            type="submit"
+            class="mt-5 rounded-xl bg-orange-600 px-5 py-3 text-sm font-bold text-white disabled:opacity-50"
+            :disabled="gateLoading"
+          >
+            {{ gateLoading ? '验证中…' : '进入管理' }}
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <div v-else class="w-full">
       <section class="overflow-hidden rounded-[2rem] border border-[#f0e5da] bg-white shadow-[0_12px_40px_rgba(101,71,45,0.06)]">
         <div class="p-7 sm:p-10">
-          <p class="text-sm font-bold tracking-[0.2em] text-[#d78248]">SYSTEM ADMIN</p>
+          <p class="text-sm font-bold tracking-[0.2em] text-[#d78248]">ADMIN</p>
           <div class="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 class="font-serif text-4xl font-bold tracking-tight text-[#422d20] sm:text-5xl">系统管理</h1>
-              <p class="mt-4 whitespace-nowrap text-sm text-[#806b5b] sm:text-base">
+              <h1 class="font-serif text-4xl font-bold tracking-tight text-[#422d20] sm:text-5xl">管理员</h1>
+              <p class="mt-4 text-sm text-[#806b5b] sm:text-base">
                 管理全站注册教师账户，以及全部班级与 VIP 授权状态。
               </p>
             </div>
+            <button
+              type="button"
+              class="inline-flex h-11 items-center gap-2 rounded-xl border border-[#ecdfd4] bg-[#fffdfb] px-4 text-sm font-semibold text-[#765f50] transition hover:border-orange-200 hover:text-[#b85e25]"
+              @click="handleExitAdmin"
+            >
+              <span class="material-symbols-rounded text-[18px] leading-none">logout</span>
+              退出管理
+            </button>
           </div>
 
           <div class="mt-7 flex flex-wrap gap-3">
-            <template v-if="activeTab === 'classes'">
+            <template v-if="activeTab === 'overview' && overview">
+              <div class="rounded-2xl bg-[#fff3e7] px-4 py-3">
+                <p class="text-xl font-bold text-[#b76129]">{{ overview.registrationsToday }}</p>
+                <p class="mt-0.5 text-sm font-medium text-[#9e704f]">今日新注册</p>
+              </div>
+              <div class="rounded-2xl bg-[#ecfdf5] px-4 py-3">
+                <p class="text-xl font-bold text-[#059669]">{{ overview.activeClasses }}</p>
+                <p class="mt-0.5 text-sm font-medium text-[#6b8f7d]">活跃班级</p>
+              </div>
+              <div class="rounded-2xl bg-[#fff7ed] px-4 py-3">
+                <p class="text-xl font-bold text-[#ea580c]">{{ overview.vipActiveCount }}</p>
+                <p class="mt-0.5 text-sm font-medium text-[#b07a4f]">VIP 生效</p>
+              </div>
+              <div class="rounded-2xl bg-[#f3f4f6] px-4 py-3">
+                <p class="text-xl font-bold text-[#4b5563]">{{ overview.totalEvaluations }}</p>
+                <p class="mt-0.5 text-sm font-medium text-[#6b7280]">评价记录</p>
+              </div>
+            </template>
+            <template v-else-if="activeTab === 'classes'">
               <div class="rounded-2xl bg-[#fff3e7] px-4 py-3">
                 <p class="text-xl font-bold text-[#b76129]">{{ summary.total }}</p>
                 <p class="mt-0.5 text-sm font-medium text-[#9e704f]">全部班级</p>
@@ -349,7 +541,7 @@ onMounted(() => {
                 <p class="mt-0.5 text-sm font-medium text-[#b07a4f]">未生效</p>
               </div>
             </template>
-            <template v-else>
+            <template v-else-if="activeTab === 'members'">
               <div class="rounded-2xl bg-[#fff3e7] px-4 py-3">
                 <p class="text-xl font-bold text-[#b76129]">{{ memberSummary.totalMembers }}</p>
                 <p class="mt-0.5 text-sm font-medium text-[#9e704f]">注册教师</p>
@@ -363,12 +555,30 @@ onMounted(() => {
                 <p class="mt-0.5 text-sm font-medium text-[#b07a4f]">管理学生</p>
               </div>
             </template>
+            <template v-else-if="activeTab === 'demo' && demoInfo">
+              <div class="rounded-2xl bg-[#fff3e7] px-4 py-3">
+                <p class="text-xl font-bold text-[#b76129]">{{ demoInfo.studentCount }}</p>
+                <p class="mt-0.5 text-sm font-medium text-[#9e704f]">演示学生</p>
+              </div>
+              <div class="rounded-2xl bg-[#ecfdf5] px-4 py-3 min-w-[10rem]">
+                <p class="text-sm font-bold leading-snug text-[#059669]">{{ formatDateTime(demoInfo.nextResetAt) }}</p>
+                <p class="mt-0.5 text-sm font-medium text-[#6b8f7d]">下次自动重置</p>
+              </div>
+            </template>
           </div>
         </div>
       </section>
 
       <section class="mt-6 rounded-[1.75rem] border border-[#f0e5da] bg-white p-4 shadow-[0_10px_30px_rgba(101,71,45,0.04)] sm:p-5">
         <div class="flex flex-wrap gap-2 border-b border-[#f3ece4] pb-4">
+          <button
+            type="button"
+            class="rounded-full px-4 py-2 text-sm font-semibold transition"
+            :class="activeTab === 'overview' ? 'bg-[#fff0e2] text-[#b85e25] shadow-[inset_0_0_0_1px_rgba(234,151,86,0.18)]' : 'bg-[#fff8f2] text-[#765f50] hover:bg-[#fff7f1] hover:text-[#b85e25]'"
+            @click="switchTab('overview')"
+          >
+            运营概览
+          </button>
           <button
             type="button"
             class="rounded-full px-4 py-2 text-sm font-semibold transition"
@@ -385,9 +595,100 @@ onMounted(() => {
           >
             会员管理
           </button>
+          <button
+            type="button"
+            class="rounded-full px-4 py-2 text-sm font-semibold transition"
+            :class="activeTab === 'demo' ? 'bg-[#fff0e2] text-[#b85e25] shadow-[inset_0_0_0_1px_rgba(234,151,86,0.18)]' : 'bg-[#fff8f2] text-[#765f50] hover:bg-[#fff7f1] hover:text-[#b85e25]'"
+            @click="switchTab('demo')"
+          >
+            演示班级
+          </button>
         </div>
 
-        <div v-if="activeTab === 'classes'">
+        <div v-if="activeTab === 'overview'">
+          <div class="mt-4">
+            <p class="text-sm font-bold tracking-[0.16em] text-[#d78248]">OPERATIONS</p>
+            <h2 class="mt-1 font-serif text-2xl font-bold text-[#422d20]">运营概览</h2>
+            <p class="mt-1 text-sm text-[#9a735d]">全站注册、班级活跃、评价量与 VIP 状态汇总（{{ overview?.timeZone || 'Asia/Shanghai' }} 自然日）</p>
+          </div>
+          <div v-if="overviewLoading" class="mt-5 rounded-2xl bg-[#fff8f2] px-5 py-14 text-center text-sm text-[#a1836d]">加载中…</div>
+          <template v-else-if="overview">
+            <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <article class="rounded-2xl border border-[#f3ece4] bg-[#fffdfb] p-4">
+                <p class="text-sm font-semibold text-[#9a735d]">近 7 日新注册</p>
+                <p class="mt-2 font-serif text-3xl font-bold text-[#422d20]">{{ overview.registrations7Days }}</p>
+              </article>
+              <article class="rounded-2xl border border-[#f3ece4] bg-[#fffdfb] p-4">
+                <p class="text-sm font-semibold text-[#9a735d]">全站班级</p>
+                <p class="mt-2 font-serif text-3xl font-bold text-[#422d20]">{{ overview.totalClasses }}</p>
+              </article>
+              <article class="rounded-2xl border border-[#f3ece4] bg-[#fffdfb] p-4">
+                <p class="text-sm font-semibold text-[#9a735d]">数据更新时间</p>
+                <p class="mt-2 text-sm font-semibold leading-6 text-[#422d20]">{{ formatDateTime(overview.generatedAt) }}</p>
+              </article>
+            </div>
+            <div v-if="overview.vipExpiringSoon.length" class="mt-6">
+              <h3 class="font-serif text-lg font-bold text-[#422d20]">7 日内 VIP 到期</h3>
+              <ul class="mt-3 space-y-2">
+                <li
+                  v-for="item in overview.vipExpiringSoon"
+                  :key="item.classId"
+                  class="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#fff8f2] px-4 py-3 text-sm"
+                >
+                  <span class="font-semibold text-[#422d20]">{{ item.className }}</span>
+                  <span class="text-[#9a735d]">{{ formatVipPlan(item.plan) }} · {{ formatDateTime(item.expiresAt) }}</span>
+                </li>
+              </ul>
+            </div>
+            <p v-else class="mt-5 text-sm text-[#9a735d]">暂无 7 日内到期的 VIP 班级。</p>
+          </template>
+        </div>
+
+        <div v-else-if="activeTab === 'demo'">
+          <div class="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p class="text-sm font-bold tracking-[0.16em] text-[#d78248]">DEMO CLASS</p>
+              <h2 class="mt-1 font-serif text-2xl font-bold text-[#422d20]">演示班级</h2>
+              <p class="mt-1 text-sm text-[#9a735d]">{{ demoInfo?.schedule || '每日 0 点自动重置' }}，可手动立即恢复演示数据</p>
+            </div>
+            <button
+              type="button"
+              class="inline-flex h-11 items-center gap-2 rounded-xl bg-[#ea580c] px-4 text-sm font-bold text-white transition hover:bg-[#c2410c] disabled:opacity-50"
+              :disabled="demoLoading || demoResetting"
+              @click="showDemoResetConfirm = true"
+            >
+              <span class="material-symbols-rounded text-[18px] leading-none">refresh</span>
+              立即重置
+            </button>
+          </div>
+          <div v-if="demoLoading" class="mt-5 rounded-2xl bg-[#fff8f2] px-5 py-14 text-center text-sm text-[#a1836d]">加载中…</div>
+          <article v-else-if="demoInfo" class="mt-5 rounded-2xl border border-[#f3ece4] bg-[#fffdfb] p-5">
+            <div class="flex flex-wrap items-center gap-2">
+              <h3 class="font-serif text-xl font-bold text-[#422d20]">{{ demoInfo.className }}</h3>
+              <span class="rounded-full bg-[#f3f4f6] px-2.5 py-0.5 text-xs font-bold text-[#6b7280]">演示</span>
+            </div>
+            <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+              <div>
+                <dt class="text-[#9a735d]">班级 ID</dt>
+                <dd class="mt-0.5 font-mono text-[#422d20]">{{ demoInfo.classId }}</dd>
+              </div>
+              <div>
+                <dt class="text-[#9a735d]">学生数量</dt>
+                <dd class="mt-0.5 font-semibold text-[#422d20]">{{ demoInfo.studentCount }} 名</dd>
+              </div>
+              <div>
+                <dt class="text-[#9a735d]">时区</dt>
+                <dd class="mt-0.5 text-[#422d20]">{{ demoInfo.timeZone }}</dd>
+              </div>
+              <div>
+                <dt class="text-[#9a735d]">下次自动重置</dt>
+                <dd class="mt-0.5 font-semibold text-[#422d20]">{{ formatDateTime(demoInfo.nextResetAt) }}</dd>
+              </div>
+            </dl>
+          </article>
+        </div>
+
+        <div v-else-if="activeTab === 'classes'">
         <div class="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p class="text-sm font-bold tracking-[0.16em] text-[#d78248]">ALL CLASSES</p>
@@ -527,7 +828,7 @@ onMounted(() => {
         </div>
         </div>
 
-        <div v-else>
+        <div v-else-if="activeTab === 'members'">
           <div class="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p class="text-sm font-bold tracking-[0.16em] text-[#d78248]">ALL MEMBERS</p>
@@ -682,6 +983,17 @@ onMounted(() => {
       type="danger"
       @confirm="confirmDeleteMember"
       @cancel="showDeleteMemberConfirm = false; deletingMember = null"
+    />
+
+    <ConfirmDialog
+      :show="showDemoResetConfirm"
+      title="重置演示班级"
+      message="将删除并重新生成演示班级全部学生、评价与任务数据。访客正在体验的内容也会被重置，是否继续？"
+      confirm-text="立即重置"
+      cancel-text="取消"
+      type="warning"
+      @confirm="confirmDemoReset"
+      @cancel="showDemoResetConfirm = false"
     />
   </AppShell>
 </template>

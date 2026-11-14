@@ -17,7 +17,9 @@ describe('班级列表应排除演示班', () => {
 
   it('游客账户不应在班级列表中看到演示班', async () => {
     const now = Date.now()
-    await db.prepare(`INSERT INTO users (id, username, is_guest) VALUES ('guest-1', 'guest', 1)`).run()
+    await db.prepare(
+      'INSERT INTO users (id, username, password_hash, is_guest, created_at) VALUES (?, ?, ?, ?, ?)'
+    ).run('guest-1', 'guest', '', 1, now)
     await db.prepare(`INSERT INTO classes (id, user_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`)
       .run(DEMO_CLASS_ID, 'guest-1', '向日葵班 · 成长花园', now, now)
     await db.prepare(`INSERT INTO classes (id, user_id, name, created_at, updated_at) VALUES ('class-real', 'guest-1', '三年二班', ?, ?)`)

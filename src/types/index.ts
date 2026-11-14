@@ -204,6 +204,36 @@ export interface AdminMemberOverview {
   }
 }
 
+export interface AdminVipExpiringItem {
+  classId: string
+  className: string
+  plan: string
+  expiresAt: number
+}
+
+export interface AdminOperationsOverview {
+  generatedAt: number
+  timeZone: string
+  registrationsToday: number
+  registrations7Days: number
+  totalClasses: number
+  activeClasses: number
+  totalEvaluations: number
+  vipActiveCount: number
+  vipExpiringSoon: AdminVipExpiringItem[]
+}
+
+export interface AdminDemoPanelInfo {
+  timeZone: string
+  nextResetAt: number
+  msUntilReset: number
+  classId: string
+  className: string
+  exists: boolean
+  studentCount: number
+  schedule: string
+}
+
 export interface VipOverview {
   classes: ClassVipItem[]
   plans: VipPlan[]

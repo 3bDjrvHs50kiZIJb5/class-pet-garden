@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { ADMIN_USERNAME } from '@/composables/useAuth'
 import { prefetchDemoGarden } from '@/utils/demoPrefetch'
 import PetPreview from '@/pages/PetPreview.vue'
 import EvaluationRules from '@/pages/EvaluationRules.vue'
@@ -30,26 +29,12 @@ const router = createRouter({
   ]
 })
 
-function isAdminUser() {
-  const savedUser = localStorage.getItem('user')
-  if (!savedUser) return false
-  try {
-    const user = JSON.parse(savedUser) as { username?: string; isGuest?: boolean }
-    return user.username === ADMIN_USERNAME && !user.isGuest
-  } catch {
-    return false
-  }
-}
-
 router.beforeEach((to) => {
   if (to.name === 'dashboard') {
     prefetchDemoGarden()
   }
   if ((to.name === 'home' || to.name === 'dashboard') && typeof to.query.studentId === 'string' && to.query.studentId) {
     return { name: 'student-share', params: { studentId: to.query.studentId } }
-  }
-  if (to.name === 'manage' && !isAdminUser()) {
-    return { name: 'dashboard' }
   }
 })
 

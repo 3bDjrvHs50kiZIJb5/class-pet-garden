@@ -1,10 +1,23 @@
 import { db } from '../db.js'
 import { resolveAuthPayload } from './auth.js'
+import { verifyAdminPanelToken } from '../utils/adminPanelToken.js'
 
 export const ADMIN_USERNAME = 'admin'
 
+function getAdminPanelTokenFromRequest(req) {
+  const header = req.headers['x-admin-access']
+  if (!header) return ''
+  return header.replace(/^Bearer\s+/i, '').trim()
+}
+
 export async function adminMiddleware(req, res, next) {
   try {
+    const panelToken = getAdminPanelTokenFromRequest(req)
+    if (panelToken && verifyAdminPanelToken(panelToken)) {
+      req.isAdminPanel = true
+      return next()
+    }
+
     const token = req.headers.authorization?.replace('Bearer ', '') || ''
     const payload = await resolveAuthPayload(token)
 
