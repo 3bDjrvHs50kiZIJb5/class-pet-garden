@@ -1,15 +1,23 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { sendAsync, sendTeacherRegisterNotice } from '../services/showDocPushService.js'
 
+const TEST_PUSH_URL =
+  'https://push.showdoc.com.cn/server/api/push/56178ff8ea2ed855a0802788296ac6c7811a8854f21da8075bb89c2936b6e50a'
+
 describe('ShowDoc 注册推送', () => {
-  const originalEnv = process.env.NODE_ENV
+  const originalEnv = { NODE_ENV: process.env.NODE_ENV, SHOWDOC_PUSH_URL: process.env.SHOWDOC_PUSH_URL }
 
   beforeEach(() => {
     vi.restoreAllMocks()
   })
 
   afterEach(() => {
-    process.env.NODE_ENV = originalEnv
+    process.env.NODE_ENV = originalEnv.NODE_ENV
+    if (originalEnv.SHOWDOC_PUSH_URL === undefined) {
+      delete process.env.SHOWDOC_PUSH_URL
+    } else {
+      process.env.SHOWDOC_PUSH_URL = originalEnv.SHOWDOC_PUSH_URL
+    }
   })
 
   it('开发环境应跳过推送', async () => {
@@ -23,6 +31,7 @@ describe('ShowDoc 注册推送', () => {
 
   it('生产环境应发送教师注册通知', async () => {
     process.env.NODE_ENV = 'production'
+    process.env.SHOWDOC_PUSH_URL = TEST_PUSH_URL
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       status: 200,
@@ -38,7 +47,7 @@ describe('ShowDoc 注册推送', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
     const [url, options] = fetchMock.mock.calls[0]
-    expect(url).toContain('push.showdoc.com.cn')
+    expect(url).toBe(TEST_PUSH_URL)
     expect(options.method).toBe('POST')
     expect(options.headers['Content-Type']).toBe('application/x-www-form-urlencoded')
 
@@ -54,6 +63,7 @@ describe('ShowDoc 注册推送', () => {
 
   it('推送失败时不应抛出异常', async () => {
     process.env.NODE_ENV = 'production'
+    process.env.SHOWDOC_PUSH_URL = TEST_PUSH_URL
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: false,
       status: 500,

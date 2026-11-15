@@ -1,8 +1,10 @@
 /**
  * 通过 ShowDoc 推送接口发送微信公众号提醒（参照 NovoLab ShowDocPushService）。
+ * 推送地址由环境变量 SHOWDOC_PUSH_URL 配置（见 .env.example）。
  */
-const PUSH_URL =
-  'https://push.showdoc.com.cn/server/api/push/8445a3ecf20e9d03e2f2e002a3e230a7716020024'
+function getPushUrl() {
+  return process.env.SHOWDOC_PUSH_URL?.trim() || ''
+}
 
 function formatRegisterTime(date = new Date()) {
   return date.toLocaleString('zh-CN', {
@@ -56,9 +58,15 @@ export async function sendAsync(title, content) {
     return
   }
 
+  const pushUrl = getPushUrl()
+  if (!pushUrl) {
+    console.warn(`[ShowDoc] 未配置 SHOWDOC_PUSH_URL，跳过推送。Title=${title}`)
+    return
+  }
+
   try {
     const body = new URLSearchParams({ title, content })
-    const response = await fetch(PUSH_URL, {
+    const response = await fetch(pushUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body

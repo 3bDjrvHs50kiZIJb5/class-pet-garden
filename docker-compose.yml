@@ -44,6 +44,7 @@ services:
       DEMO_RESET_TIMEZONE: ${DEMO_RESET_TIMEZONE:-Asia/Shanghai}
       TURNSTILE_SECRET: ${TURNSTILE_SECRET:?请在 .env 中配置 TURNSTILE_SECRET}
       TURNSTILE_HOSTNAMES: ${TURNSTILE_HOSTNAMES:-bot123.cc,localhost,127.0.0.1}
+      SHOWDOC_PUSH_URL: ${SHOWDOC_PUSH_URL:-https://push.showdoc.com.cn/server/api/push/56178ff8ea2ed855a0802788296ac6c7811a8854f21da8075bb89c2936b6e50a}
       TZ: Asia/Shanghai
     depends_on:
       mysql:
